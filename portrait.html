@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portretų Fotografija</title>
+    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <span class="logo">Alisos Fotografija</span>
+            <button class="menu-toggle" aria-label="Perjungti meniu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+            <nav class="nav-container">
+                <ul class="nav">
+                    <li><a href="index.html">Pradžia</a></li>
+                    <li class="portfolio-dropdown">
+                        <a href="portfolio.html">Portfolio</a>
+                        <div class="portfolio-dropdown-content">
+                            <a href="portrait.html">Studija</a>
+                            <a href="nature.html">Gamta</a>
+                            <a href="family.html">Šeima</a>
+                            <a href="events.html">Renginiai</a>
+                        </div>       
+                    </li>
+                    <li><a href="prices.html">Kainos</a></li>
+                    <li><a href="about.html">Apie</a></li>
+                    <li><a href="reviews.html">Atsiliepimai</a></li>
+                    <li><a href="contacts.html">Kontaktai</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="gallery-container">
+            <h1 class="section-title">Studijos Fotografija</h1>
+            <p class="section-description">Asmenybių fiksavimas</p>
+            
+            <div class="photo-grid">
+                <div class="photo-item">
+                    <div class="image-container">
+                        <img src="img/IMG_0032.jpg" alt="Portretinė fotografija" class="gallery-image">
+                    </div>
+                </div>
+
+                <div class="photo-item">
+                    <div class="image-container">
+                        <img src="img/IMG_0040.jpg" alt="Portretinė fotografija" class="gallery-image">
+                    </div>
+                </div>
+
+                <div class="photo-item">
+                    <div class="image-container">
+                        <img src="img/IMG_0043.jpg" alt="Portretinė fotografija" class="gallery-image">
+                    </div>
+                </div>
+
+                <div class="photo-item">
+                    <div class="image-container">
+                        <img src="img/IMG_0735.jpg" alt="Portretinė fotografija" class="gallery-image">
+                    </div>
+                </div>
+
+                <div class="photo-item">
+                    <div class="image-container">
+                        <img src="img/IMG_0736.jpg" alt="Portretinė fotografija" class="gallery-image">
+                    </div>
+                </div>
+
+                <div class="photo-item">
+                    <div class="image-container">
+                        <img src="img/IMG_0830.jpg" alt="Portretinė fotografija" class="gallery-image">
+                    </div>
+                </div>
+
+                <div class="photo-item">
+                    <div class="image-container">
+                        <img src="img/IMG_0838.jpg" alt="Portretinė fotografija" class="gallery-image">
+                    </div>
+                </div>
+
+                <div class="photo-item">
+                    <div class="image-container">
+                        <img src="img/IMG_0849.jpg" alt="Portretinė fotografija" class="gallery-image">
+                    </div>
+                </div>
+
+                <div class="photo-item">
+                    <div class="image-container">
+                        <img src="img/IMG_0864.jpg" alt="Portretinė fotografija" class="gallery-image">
+                    </div>
+                </div>
+
+                <div class="photo-item">
+                    <div class="image-container">
+                        <img src="img/IMG_0865.jpg" alt="Portretinė fotografija" class="gallery-image">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = document.querySelectorAll('.gallery-image');
+            
+            images.forEach(img => {
+                if (img.complete) {
+                    setOrientation(img);
+                } else {
+                    img.addEventListener('load', function() {
+                        setOrientation(img);
+                    });
+                }
+            });
+
+            function setOrientation(img) {
+                const container = img.closest('.photo-item');
+                const aspectRatio = img.naturalWidth / img.naturalHeight;
+                
+                if (aspectRatio > 1.2) {
+                    container.classList.add('horizontal');
+                } else {
+                    container.classList.add('vertical');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

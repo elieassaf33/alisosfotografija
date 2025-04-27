@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klientų Atsiliepimai</title>
+    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function(){
+            emailjs.init("3XcOLWBEcnMxV5R9z"); // Replace with your EmailJS public key
+        })();
+    </script>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <span class="logo">Alisos Fotografija</span>
+            <button class="menu-toggle" aria-label="Perjungti meniu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+            <nav class="nav-container">
+                <ul class="nav">
+                    <li><a href="index.html">Pradžia</a></li>
+                    <li class="portfolio-dropdown">
+                        <a href="portfolio.html">Portfolio</a>
+                        <div class="portfolio-dropdown-content">
+                            <a href="portrait.html">Studija</a>
+                            <a href="nature.html">Gamta</a>
+                            <a href="family.html">Šeima</a>
+                            <a href="events.html">Renginiai</a>
+                        </div>       
+                    </li>
+                    <li><a href="prices.html">Kainos</a></li>
+                    <li><a href="about.html">Apie</a></li>
+                    <li><a href="reviews.html">Atsiliepimai</a></li>
+                    <li><a href="contacts.html">Kontaktai</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="reviews-container">
+            <h1 class="page-title">Klientų Atsiliepimai</h1>
+            <p class="subtitle">Ką mano klientai sako apie savo patirtį</p>
+
+            <div class="reviews-grid">
+                <!-- Reviews will be dynamically loaded here -->
+                <div class="no-reviews">Kol kas nėra atsiliepimų.</div>
+            </div>
+
+            <div class="review-form-container">
+                <h2 class="section-title">Pasidalinkite Savo Patirtimi</h2>
+                <p class="section-subtitle">Man labai svarbu išgirsti jūsų nuomonę apie mano fotografijos paslaugas</p>
+                
+                <form id="reviewForm">
+                    <div class="form-group">
+                        <label for="id_client_name" class="form-label">Jūsų Vardas</label>
+                        <input type="text" name="client_name" id="id_client_name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Įvertinimas</label>
+                        <div class="rating-input">
+                            <input type="hidden" name="rating" id="id_rating" value="0">
+                            <div class="rating-stars">
+                                <span class="star" data-rating="1">☆</span>
+                                <span class="star" data-rating="2">☆</span>
+                                <span class="star" data-rating="3">☆</span>
+                                <span class="star" data-rating="4">☆</span>
+                                <span class="star" data-rating="5">☆</span>
+                            </div>
+                            <span class="rating-text">Spauskite žvaigždutes įvertinimui</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_review_text" class="form-label">Jūsų Atsiliepimas</label>
+                        <textarea name="review_text" id="id_review_text" class="form-input" rows="5" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-button">
+                        <span>Pateikti Atsiliepimą</span>
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Success Popup -->
+        <div class="review-popup" id="successPopup">
+            <div class="review-popup-content">
+                <h2>Ačiū!</h2>
+                <p>Jūsų atsiliepimas buvo sėkmingai pateiktas.</p>
+                <button onclick="closePopup()">Uždaryti</button>
+            </div>
+        </div>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const stars = document.querySelectorAll('.rating-stars .star');
+            const ratingInput = document.getElementById('id_rating');
+            const ratingText = document.querySelector('.rating-text');
+            const form = document.getElementById('reviewForm');
+            const successPopup = document.getElementById('successPopup');
+
+            const ratingDescriptions = {
+                0: 'Spauskite žvaigždutes įvertinimui',
+                1: 'Labai blogai',
+                2: 'Blogai',
+                3: 'Vidutiniškai',
+                4: 'Gerai',
+                5: 'Puiku'
+            };
+
+            // Handle star rating
+            stars.forEach(star => {
+                star.addEventListener('click', function () {
+                    const rating = this.dataset.rating;
+                    ratingInput.value = rating;
+
+                    stars.forEach(s => {
+                        s.textContent = s.dataset.rating <= rating ? '★' : '☆';
+                        s.classList.toggle('active', s.dataset.rating <= rating);
+                    });
+
+                    ratingText.textContent = ratingDescriptions[rating];
+                });
+
+                star.addEventListener('mouseover', function () {
+                    const rating = this.dataset.rating;
+                    stars.forEach(s => {
+                        s.textContent = s.dataset.rating <= rating ? '★' : '☆';
+                    });
+                });
+
+                star.addEventListener('mouseout', function () {
+                    const currentRating = ratingInput.value;
+                    stars.forEach(s => {
+                        s.textContent = s.dataset.rating <= currentRating ? '★' : '☆';
+                    });
+                });
+            });
+
+            // Handle form submission
+            form.addEventListener('submit', function (event) {
+                event.preventDefault(); // Prevent actual form submission
+
+                const name = document.getElementById('id_client_name').value;
+                const rating = document.getElementById('id_rating').value;
+                const reviewText = document.getElementById('id_review_text').value;
+
+                const templateParams = {
+                    name: name,
+                    rating: rating,
+                    review_text: reviewText,
+                };
+
+                // Send review via EmailJS
+                emailjs.send("service_c7srv2s", "template_i8myed4", templateParams)
+                    .then(function(response) {
+                        console.log("SUCCESS!", response.status, response.text);
+                        successPopup.style.display = 'block';
+                        form.reset(); // Reset the form fields
+                        ratingInput.value = 0; // Reset the rating
+                        stars.forEach(star => {
+                            star.textContent = '☆';
+                            star.classList.remove('active');
+                        });
+                        ratingText.textContent = ratingDescriptions[0];
+                    }, function(error) {
+                        console.error("FAILED...", error);
+                        alert("Įvyko klaida siunčiant atsiliepimą. Bandykite dar kartą.");
+                    });
+            });
+        });
+
+        function closePopup() {
+            const successPopup = document.getElementById('successPopup');
+            successPopup.style.display = 'none'; // Hide the popup
+        }
+    </script>
+    <style>
+        .reviews-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+    
+        .page-title {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+    
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+    
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+            padding: 20px 0;
+        }
+    
+        .review-card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+    
+        .review-card:hover {
+            transform: translateY(-5px);
+        }
+    
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+    
+        .client-info h3 {
+            margin: 0;
+            color: #333;
+            font-size: 1.2em;
+        }
+    
+        .rating {
+            margin-top: 5px;
+        }
+    
+        .star {
+            color: #ffd700;
+            font-size: 1.2em;
+        }
+    
+        .star.filled {
+            color: #ffd700;
+        }
+    
+        .review-date {
+            color: #666;
+            font-size: 0.9em;
+        }
+    
+        .review-content {
+            color: #444;
+        }
+    
+        .review-text {
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+    
+        .no-reviews {
+            text-align: center;
+            padding: 40px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            color: #666;
+            grid-column: 1 / -1;
+        }
+    
+        .review-form-container {
+            max-width: 800px;
+            margin: 40px auto 0;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    
+        .section-title {
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+    
+        .section-subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+    
+        .review-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+    
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+    
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+    
+        .form-input {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+            width: 100%;
+        }
+    
+        .form-input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+    
+        textarea.form-input {
+            min-height: 120px;
+            resize: vertical;
+        }
+    
+        .rating-input {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+    
+        .rating-stars {
+            display: flex;
+            gap: 5px;
+        }
+    
+        .rating-stars .star {
+            font-size: 2em;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+    
+        .rating-stars .star:hover,
+        .rating-stars .star.active {
+            color: #ffd700;
+        }
+    
+        .rating-text {
+            color: #666;
+            font-size: 0.9em;
+        }
+    
+        .submit-button {
+            background: #007bff;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background-color 0.3s ease;
+        }
+    
+        .submit-button:hover {
+            background: #0056b3;
+        }
+    
+        @media (max-width: 768px) {
+            .reviews-grid {
+                grid-template-columns: 1fr;
+            }
+    
+            .review-form-container {
+                padding: 20px;
+            }
+        }
+    
+        .review-popup {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease;
+        }
+    
+        .review-popup-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: slideUp 0.3s ease;
+        }
+    
+        .review-popup-content h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+    
+        .review-popup-content p {
+            margin-bottom: 20px;
+            color: #333;
+        }
+    
+        .review-popup-content button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+    
+        .review-popup-content button:hover {
+            background-color: #45a049;
+        }
+    
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</body>
+</html>

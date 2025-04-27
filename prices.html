@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fotografijos Paketai</title>
+    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <span class="logo">Alisos Fotografija</span>
+            <button class="menu-toggle" aria-label="Perjungti meniu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+            <nav class="nav-container">
+                <ul class="nav">
+                    <li><a href="index.html">Pradžia</a></li>
+                    <li class="portfolio-dropdown">
+                        <a href="portfolio.html">Portfolio</a>
+                        <div class="portfolio-dropdown-content">
+                            <a href="portrait.html">Studija</a>
+                            <a href="nature.html">Gamta</a>
+                            <a href="family.html">Šeima</a>
+                            <a href="events.html">Renginiai</a>
+                        </div>       
+                    </li>
+                    <li><a href="prices.html">Kainos</a></li>
+                    <li><a href="about.html">Apie</a></li>
+                    <li><a href="reviews.html">Atsiliepimai</a></li>
+                    <li><a href="contacts.html">Kontaktai</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="pricing-container">
+            <h1 class="page-title">Fotografijos Paketai</h1>
+            <p class="subtitle">Pasirinkite tinkamą paketą savo ypatingiems momentams</p>
+
+            <div class="pricing-grid">
+                <!-- Portrait Package -->
+                <div class="pricing-card">
+                    <h2>Asmeninė Fotosesija Studijoje</h2>
+                    <div class="price">€85</div>
+                    <ul class="features">
+                        <li>1 valandos sesija</li>
+                        <li>30 retušuotų nuotraukų</li>
+                        <li>Stiliaus konsultacija</li>
+                        <li>Įskaičiuota studijos nuoma</li>
+                        <li>Keli įvaizdžiai</li>
+                        <li>Greitas atidavimas</li>
+                    </ul>
+                    <a href="contacts.html" class="book-btn">Užsakyti</a>
+                </div>
+
+                <!-- Nature Package -->
+                <div class="pricing-card popular">
+                    <h2>Asmeninė Fotosesija Gamtoje</h2>
+                    <div class="popular-badge">Populiariausias</div>
+                    <div class="price">€70</div>
+                    <ul class="features">
+                        <li>Lokacijų paieška</li>
+                        <li>1.5 valandos sesija</li>
+                        <li>Kraštovaizdžių fotografija</li>
+                        <li>Oro sąlygų planavimas</li>
+                        <li>Greitas nuotraukų atidavimas</li>
+                        <li>30 retušuotų nuotraukų</li>
+                        <li>Stiliaus konsultacija</li>
+                    </ul>
+                    <a href="contacts.html" class="book-btn">Užsakyti</a>
+                </div>
+
+                <!-- Events Package -->
+                <div class="pricing-card">
+                    <h2>Renginių Fotografavimas</h2>
+                    <div class="price">Nuo €40</div>
+                    <ul class="features">
+                        <li>Nuo 1-8 valandų trukmės fotografavimo</li>
+                        <li>40+ retušuotų nuotraukų</li>
+                        <li>Nuotraukų atidavimas per 7 dienas</li>
+                        <li>Svarbių detalių aptarimas</li>
+                    </ul>
+                    <a href="contacts.html" class="book-btn">Užsakyti</a>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="js/scripts.js"></script>
+</body>
+</html>

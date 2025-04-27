@@ -1,11 +1,173 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="lt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Pradžia - Alisos Fotografija</title>
+    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    Testing website deployment 
+    <header>
+        <div class="header-content">
+            <span class="logo">Alisos Fotografija</span>
+            <button class="menu-toggle" aria-label="Perjungti meniu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+            <nav class="nav-container">
+                <ul class="nav">
+                    <li><a href="index.html">Pradžia</a></li>
+                    <li class="portfolio-dropdown">
+                        <a href="portfolio.html">Portfolio</a>
+                        <div class="portfolio-dropdown-content">
+                            <a href="portrait.html">Studija</a>
+                            <a href="nature.html">Gamta</a>
+                            <a href="family.html">Šeima</a>
+                            <a href="events.html">Renginiai</a>
+                        </div>       
+                    </li>
+                    <li><a href="prices.html">Kainos</a></li>
+                    <li><a href="about.html">Apie</a></li>
+                    <li><a href="reviews.html">Atsiliepimai</a></li>
+                    <li><a href="contacts.html">Kontaktai</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="hero">
+            <div class="slideshow-container">
+                <div id="image-container">
+                    <img id="dynamic-image" src="img/IMG_1720.jpg" alt="Fotografija">
+                </div>
+                <div class="slideshow-controls">
+                    <button id="prev-btn" class="nav-btn">&lt;</button>
+                    <div class="dots-container" id="dots-container"></div>
+                    <button id="next-btn" class="nav-btn">&gt;</button>
+                </div>
+                <div class="slide-caption" id="slide-caption">Mano fotografija</div>
+            </div>
+            <div class="overlay"></div>
+        </div>
+
+        <section class="category-showcase">
+            <h2 class="showcase-title">Atraskite Mano Fotografiją</h2>
+            <div class="showcase-grid">
+                <a href="portrait.html" class="showcase-item">
+                    <img src="img/IMG_0735.jpg" alt="Portretinė fotografija" class="showcase-image">
+                    <div class="showcase-overlay">
+                        <h3>Portretinė Fotografija</h3>
+                        <p>Asmenybių ir akimirkų fiksavimas puikiu detališkumu</p>
+                    </div>
+                </a>
+
+                <a href="family.html" class="showcase-item">
+                    <img src="img/IMG_8163.jpg" alt="Šeimos fotografija" class="showcase-image">
+                    <div class="showcase-overlay">
+                        <h3>Šeimos Fotografija</h3>
+                        <p>Brangiausių šeimos akimirkų fiksavimas ir amžinų prisiminimų kūrimas</p>
+                    </div>
+                </a>
+
+                <a href="nature.html" class="showcase-item">
+                    <img src="img/IMG_1671.jpg" alt="Gamtos fotografija" class="showcase-image">
+                    <div class="showcase-overlay">
+                        <h3>Gamtos Fotografija</h3>
+                        <p>Kraštovaizdžių ir laukinės gamtos grožio tyrinėjimas</p>
+                    </div>
+                </a>
+
+                <a href="events.html" class="showcase-item">
+                    <img src="img/IMG_9435.jpg" alt="Renginių fotografija" class="showcase-image">
+                    <div class="showcase-overlay">
+                        <h3>Renginių Fotografija</h3>
+                        <p>Ypatingų progių ir švenčių dokumentavimas stiliu</p>
+                    </div>
+                </a>
+            </div>
+        </section>
+    </main>
+    <script src="js/scripts.js"></script>
+    <script>
+        const images = [
+            'img/IMG_1720.jpg' ,
+             'img/IMG_0040.jpg',
+            'img/IMG_0736.jpg',
+            'img/IMG_1861.jpg' 
+        ];
+    
+        const captions = [
+            "Portretinė fotografija - Asmeniniai akimirkos fokusuose",
+            "Šeimos fotografija - Brangiausių akimirkų fiksavimas",
+            "Gamtos fotografija - Laukinės gamtos grožis",
+            "Renginių fotografija - Ypatingų progių šventimas"
+        ];
+    
+        let currentIndex = 0;
+        const dotsContainer = document.getElementById('dots-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const img = document.getElementById("dynamic-image");
+    
+        // Create dots
+        images.forEach((_, index) => {
+            const dot = document.createElement('div');
+            dot.classList.add('dot');
+            if (index === 0) dot.classList.add('active');
+            dot.addEventListener('click', () => goToSlide(index));
+            dotsContainer.appendChild(dot);
+        });
+    
+        function updateCaption() {
+            const caption = document.getElementById('slide-caption');
+            caption.style.opacity = 0;
+            setTimeout(() => {
+                caption.textContent = captions[currentIndex];
+                caption.style.opacity = 1;
+            }, 250);
+        }
+    
+        function updateDots() {
+            document.querySelectorAll('.dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentIndex);
+            });
+        }
+    
+        function goToSlide(index) {
+            if (index >= 0 && index < images.length) {
+                img.style.opacity = 0;
+                
+                setTimeout(() => {
+                    currentIndex = index;
+                    img.src = images[currentIndex];
+                    img.style.opacity = 1;
+                    updateDots();
+                    updateCaption();
+                }, 500);
+            }
+        }
+    
+        function nextSlide() {
+            goToSlide((currentIndex + 1) % images.length);
+        }
+    
+        function prevSlide() {
+            goToSlide((currentIndex - 1 + images.length) % images.length);
+        }
+    
+        prevBtn.addEventListener('click', prevSlide);
+        nextBtn.addEventListener('click', nextSlide);
+    
+        // Auto advance slides
+        const slideInterval = setInterval(nextSlide, 5000);
+    
+        // Pause slideshow when hovering over controls
+        document.querySelector('.slideshow-controls').addEventListener('mouseenter', () => {
+            clearInterval(slideInterval);
+        });
+    </script>
 </body>
 </html>
