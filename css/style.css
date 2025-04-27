@@ -391,11 +391,11 @@ img {
 }
 
 .showcase-item {
-    position: relative;
+    position:relative;
     overflow: hidden;
     border-radius: 15px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
+    /* transition: transform 0.3s ease; */
     aspect-ratio: 3/4;
     text-decoration: none;
 }
@@ -426,6 +426,7 @@ img {
     color: white;
     transform: translateY(20%);
     transition: transform 0.3s ease;
+    flex-direction: column;
 }
 
 .showcase-item:hover .showcase-overlay {
