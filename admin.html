@@ -9,8 +9,30 @@
         body { font-family: 'Poppins', sans-serif; padding: 20px; }
         label, input, button { display: block; margin: 10px 0; }
         button { padding: 10px 20px; cursor: pointer; }
-        #status { margin-top: 15px; font-weight: bold; }
+        #status, #uploadStatus { margin-top: 15px; font-weight: bold; }
         #upload-section { display: none; margin-top: 20px; }
+        #photos-container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            gap: 15px; 
+            margin-top: 20px; 
+        }
+        .photo-card { 
+            border: 1px solid #ddd; 
+            padding: 10px; 
+            border-radius: 8px; 
+            text-align: center; 
+        }
+        .photo-card img { width: 100%; border-radius: 8px; margin-bottom: 10px; }
+        .delete-btn { 
+            background: #e74c3c; 
+            color: white; 
+            border: none; 
+            padding: 8px 12px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+        .delete-btn:hover { background: #c0392b; }
     </style>
 </head>
 <body>
@@ -40,12 +62,17 @@
 
         <button id="uploadBtn">Upload</button>
         <div id="uploadStatus"></div>
+
+        <hr>
+        <h2>Manage Photos</h2>
+        <button id="loadPhotosBtn">Load Photos</button>
+        <div id="photos-container"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC6P-2nngV7gL7f7UeJICkJ_uwOikFFK50",
@@ -71,7 +98,10 @@
         const categorySelect = document.getElementById('category');
         const uploadStatus = document.getElementById('uploadStatus');
 
-        // Replace this with your admin UID from Firebase Auth
+        const loadPhotosBtn = document.getElementById('loadPhotosBtn');
+        const photosContainer = document.getElementById('photos-container');
+
+        // Replace with your actual Admin UID
         const ADMIN_UID = "BfeIB1JrBYM1kU4QSW9K8zWDNNP2";
 
         // Login functionality
@@ -138,7 +168,54 @@
                 uploadStatus.textContent = 'Upload failed. Check console.';
             }
         });
+
+        // Load and display photos
+        loadPhotosBtn.addEventListener('click', async () => {
+            photosContainer.innerHTML = "Loading...";
+
+            try {
+                const snapshot = await getDocs(collection(db, "photos"));
+                photosContainer.innerHTML = "";
+
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const card = document.createElement("div");
+                    card.classList.add("photo-card");
+
+                    const img = document.createElement("img");
+                    img.src = data.url;
+                    img.alt = data.caption || "photo";
+
+                    const delBtn = document.createElement("button");
+                    delBtn.textContent = "Delete";
+                    delBtn.classList.add("delete-btn");
+                    delBtn.addEventListener("click", async () => {
+                        if (confirm("Delete this photo?")) {
+                            try {
+                                await deleteDoc(doc(db, "photos", docSnap.id));
+                                card.remove();
+                                alert("Photo deleted.");
+                            } catch (err) {
+                                console.error(err);
+                                alert("Failed to delete.");
+                            }
+                        }
+                    });
+
+                    card.appendChild(img);
+                    card.appendChild(delBtn);
+                    photosContainer.appendChild(card);
+                });
+
+                if (!photosContainer.innerHTML) {
+                    photosContainer.innerHTML = "<p>No photos found.</p>";
+                }
+
+            } catch (error) {
+                console.error(error);
+                photosContainer.innerHTML = "<p>Failed to load photos.</p>";
+            }
+        });
     </script>
 </body>
 </html>
-
