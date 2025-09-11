@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="css/style.css">
     <style>
         .gallery-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 40px 20px;
         }
@@ -30,14 +30,19 @@
 
         .photo-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-auto-rows: 500px;  
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));     /* height adjusts based on content */
             gap: 15px;
+            grid-auto-flow: dense;       /* fills gaps automatically */
         }
 
         .photo-item {
             position: relative;
             border-radius: 10px;
             overflow: hidden;
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
             background: transparent;
         }
 
@@ -69,13 +74,6 @@
             }
         }
         
-        
-
-
-
-        
-
-
     </style>
 </head>
 <body>
