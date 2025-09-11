@@ -7,80 +7,6 @@
     <link rel="icon" type="image/x-icon" href="img/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    <header>
-        <div class="header-content">
-            <span class="logo">Alisos Fotografija</span>
-            <button class="menu-toggle" aria-label="Perjungti meniu">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </button>
-            <nav class="nav-container">
-                <ul class="nav">
-                    <li><a href="index.html">Pradžia</a></li>
-                    <li class="portfolio-dropdown">
-                        <a href="portfolio.html">Portfolio</a>
-                        <div class="portfolio-dropdown-content">
-                            <a href="portrait.html">Studija</a>
-                            <a href="nature.html">Gamta</a>
-                            <a href="family.html">Šeima</a>
-                            <a href="events.html">Renginiai</a>
-                        </div>       
-                    </li>
-                    <li><a href="prices.html">Kainos</a></li>
-                    <li><a href="about.html">Apie</a></li>
-                    <li><a href="reviews.html">Atsiliepimai</a></li>
-                    <li><a href="contacts.html">Kontaktai</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-    <main>
-        <div class="gallery-container">
-            <h1 class="section-title">Renginių Fotografija</h1>
-            <p class="section-description">Ypatingų progų fiksavimas</p>
-            
-            <div class="photo-grid">
-                <div class="photo-item">
-                    <div class="image-container">
-                        <img src="img/IMG_9461.jpg" alt="Renginio fotografija" class="gallery-image">
-                    </div>
-                </div>
-
-                <div class="photo-item">
-                    <div class="image-container">
-                        <img src="img/IMG_9596.jpg" alt="Renginio fotografija" class="gallery-image">
-                    </div>
-                </div>
-
-                <div class="photo-item">
-                    <div class="image-container">
-                        <img src="img/IMG_9446.jpg" alt="Renginio fotografija" class="gallery-image">
-                    </div>
-                </div>
-
-                <div class="photo-item">
-                    <div class="image-container">
-                        <img src="img/IMG_9435.jpg" alt="Renginio fotografija" class="gallery-image">
-                    </div>
-                </div>
-
-                <div class="photo-item">
-                    <div class="image-container">
-                        <img src="img/IMG_9354-Enhanced-NR.jpg" alt="Renginio fotografija" class="gallery-image">
-                    </div>
-                </div>
-
-                <div class="photo-item">
-                    <div class="image-container">
-                        <img src="img/IMG_9287.jpg" alt="Renginio fotografija" class="gallery-image">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
     <style>
         .gallery-container {
             max-width: 1200px;
@@ -124,10 +50,6 @@
         }
 
         .gallery-image {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -148,32 +70,91 @@
             }
         }
     </style>
-    <script src="js/scripts.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const images = document.querySelectorAll('.gallery-image');
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <span class="logo">Alisos Fotografija</span>
+            <button class="menu-toggle" aria-label="Perjungti meniu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+            <nav class="nav-container">
+                <ul class="nav">
+                    <li><a href="index.html">Pradžia</a></li>
+                    <li class="portfolio-dropdown">
+                        <a href="portfolio.html">Portfolio</a>
+                        <div class="portfolio-dropdown-content">
+                            <a href="portrait.html">Studija</a>
+                            <a href="nature.html">Gamta</a>
+                            <a href="family.html">Šeima</a>
+                            <a href="events.html">Renginiai</a>
+                        </div>       
+                    </li>
+                    <li><a href="prices.html">Kainos</a></li>
+                    <li><a href="about.html">Apie</a></li>
+                    <li><a href="reviews.html">Atsiliepimai</a></li>
+                    <li><a href="contacts.html">Kontaktai</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="gallery-container">
+            <h1 class="section-title">Renginių Fotografija</h1>
+            <p class="section-description">Ypatingų progų fiksavimas</p>
             
-            images.forEach(img => {
-                if (img.complete) {
-                    setOrientation(img);
-                } else {
-                    img.addEventListener('load', function() {
-                        setOrientation(img);
-                    });
-                }
-            });
+            <div class="photo-grid" id="photoGrid">
+                <!-- Photos will be loaded here -->
+            </div>
+        </div>
+    </main>
 
-            function setOrientation(img) {
-                const container = img.closest('.photo-item');
-                const aspectRatio = img.naturalWidth / img.naturalHeight;
-                
-                if (aspectRatio > 1.2) {
-                    container.classList.add('horizontal');
-                } else {
-                    container.classList.add('vertical');
-                }
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6P-2nngV7gL7f7UeJICkJ_uwOikFFK50",
+            authDomain: "alisos-fotografija.firebaseapp.com",
+            projectId: "alisos-fotografija",
+            storageBucket: "alisos-fotografija.appspot.com",
+            messagingSenderId: "394303533680",
+            appId: "1:394303533680:web:8839ce95758766463c7ab5",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const photoGrid = document.getElementById('photoGrid');
+        const category = 'events'; // category for this page
+
+        async function loadPhotos() {
+            try {
+                const q = query(
+                    collection(db, "photos"),
+                    where("category", "==", category),
+                    orderBy("createdAt", "desc")
+                );
+                const snapshot = await getDocs(q);
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const photoItem = document.createElement('div');
+                    photoItem.className = 'photo-item';
+                    photoItem.innerHTML = `
+                        <div class="image-container">
+                            <img src="${data.url}" alt="${data.caption}" class="gallery-image">
+                        </div>
+                    `;
+                    photoGrid.appendChild(photoItem);
+                });
+            } catch (error) {
+                console.error("Error loading photos:", error);
             }
-        });
+        }
+
+        loadPhotos();
     </script>
 </body>
 </html>
