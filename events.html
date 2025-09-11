@@ -148,6 +148,15 @@
                         </div>
                     `;
                     photoGrid.appendChild(photoItem);
+                    const img = photoItem.querySelector('img');
+    img.addEventListener('load', () => {
+        const aspectRatio = img.naturalWidth / img.naturalHeight;
+        if (aspectRatio > 1.2) {
+            photoItem.classList.add('horizontal');
+        } else {
+            photoItem.classList.add('vertical');
+        }
+    });
                 });
             } catch (error) {
                 console.error("Error loading photos:", error);

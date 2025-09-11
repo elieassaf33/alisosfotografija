@@ -6,32 +6,64 @@
     <title>Portretų Fotografija</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
+        .gallery-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .section-description {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+
         .photo-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 15px;
         }
+
         .photo-item {
             position: relative;
-            border-radius: 8px;
+            border-radius: 10px;
             overflow: hidden;
             background: transparent;
-            aspect-ratio: 2/3;
         }
+
         .image-container {
+            position: relative;
             width: 100%;
             height: 100%;
             overflow: hidden;
         }
+
         .gallery-image {
-            width: 100%;
+            width:  100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: cover;
             object-position: center;
+            display: block;
+            background: transparent;
         }
+
         @media (max-width: 768px) {
             .photo-grid {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .photo-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -110,6 +142,15 @@
                         </div>
                     `;
                     photoGrid.appendChild(photoItem);
+                    const img = photoItem.querySelector('img');
+    img.addEventListener('load', () => {
+        const aspectRatio = img.naturalWidth / img.naturalHeight;
+        if (aspectRatio > 1.2) {
+            photoItem.classList.add('horizontal');
+        } else {
+            photoItem.classList.add('vertical');
+        }
+    });
                 });
             } catch (error) {
                 console.error("Error loading photos:", error);
