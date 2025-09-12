@@ -78,7 +78,7 @@
 <body>
     <header>
         <div class="header-content">
-            <span class="logo">Alisos Fotografija</span>
+            <img class="logo" src="logo.png" alt="Alisos Fotografija" style="height: 100px; width: auto;">
             <button class="menu-toggle" aria-label="Perjungti meniu">
                 <span class="bar"></span>
                 <span class="bar"></span>
@@ -116,43 +116,35 @@
     </main>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyC6P-2nngV7gL7f7UeJICkJ_uwOikFFK50",
-            authDomain: "alisos-fotografija.firebaseapp.com",
-            projectId: "alisos-fotografija",
-            storageBucket: "alisos-fotografija.appspot.com",
-            messagingSenderId: "394303533680",
-            appId: "1:394303533680:web:8839ce95758766463c7ab5",
-        };
+// 🔹 Firebase config
+const firebaseConfig = {
+    apiKey: "AIzaSyC6P-2nngV7gL7f7UeJICkJ_uwOikFFK50",
+    authDomain: "alisos-fotografija.firebaseapp.com",
+    projectId: "alisos-fotografija",
+    storageBucket: "alisos-fotografija.appspot.com",
+    messagingSenderId: "394303533680",
+    appId: "1:394303533680:web:8839ce95758766463c7ab5",
+};
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-        const photoGrid = document.getElementById('photoGrid');
-        const category = 'events'; // category for this page
+const photoGrid = document.getElementById('photoGrid');
+const category = 'events'; // category for this page
 
-        async function loadPhotos() {
-            try {
-                const q = query(
-                    collection(db, "photos"),
-                    where("category", "==", category),
-                    orderBy("createdAt", "desc")
-                );
-                const snapshot = await getDocs(q);
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const photoItem = document.createElement('div');
-                    photoItem.className = 'photo-item';
-                    photoItem.innerHTML = `
-                        <div class="image-container">
-                            <img src="${data.url}" alt="${data.caption}" class="gallery-image">
-                        </div>
-                    `;
-                    photoGrid.appendChild(photoItem);
-                    const img = photoItem.querySelector('img');
+// 🔹 Render photo element
+function renderPhoto(data) {
+    const photoItem = document.createElement('div');
+    photoItem.className = 'photo-item';
+    photoItem.innerHTML = `
+        <div class="image-container">
+            <img src="${data.url}" alt="${data.caption}" class="gallery-image">
+        </div>
+    `;
+    const img = photoItem.querySelector('img');
     img.addEventListener('load', () => {
         const aspectRatio = img.naturalWidth / img.naturalHeight;
         if (aspectRatio > 1.2) {
@@ -161,13 +153,33 @@
             photoItem.classList.add('vertical');
         }
     });
-                });
-            } catch (error) {
-                console.error("Error loading photos:", error);
-            }
-        }
+    return photoItem;
+}
 
-        loadPhotos();
-    </script>
+// 🔹 Load cached photos first for instant display
+const cachedPhotos = JSON.parse(localStorage.getItem(`photos_${category}`) || '[]');
+cachedPhotos.forEach(p => photoGrid.appendChild(renderPhoto(p)));
+
+// 🔹 Firestore real-time updates
+const q = query(
+    collection(db, "photos"),
+    where("category", "==", category),
+    orderBy("createdAt", "desc")
+);
+
+// If you want real-time updates instead of one-time load, use onSnapshot
+onSnapshot(q, (snapshot) => {
+    const freshData = [];
+    photoGrid.innerHTML = ''; // clear grid
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        freshData.push(data);
+        photoGrid.appendChild(renderPhoto(data));
+    });
+    localStorage.setItem(`photos_${category}`, JSON.stringify(freshData));
+});
+
+</script>
+
 </body>
 </html>

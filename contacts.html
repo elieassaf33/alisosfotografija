@@ -18,7 +18,7 @@
 <body>
     <header>
         <div class="header-content">
-            <span class="logo">Alisos Fotografija</span>
+            <img class="logo" src="logo.png" alt="Alisos Fotografija" style="height: 100px; width: auto;">
             <button class="menu-toggle" aria-label="Perjungti meniu">
                 <span class="bar"></span>
                 <span class="bar"></span>
@@ -118,16 +118,18 @@
     </main>
     <script type="text/javascript">
         function sendEmail() {
-            const name = document.getElementById("name").value;
-            const email = document.getElementById("email").value;
+            const from_name = document.getElementById("name").value;
+            const from_email = document.getElementById("email").value;
             const subject = document.getElementById("subject").value;
             const message = document.getElementById("message").value;
+            const to_email = "alisosfotografija@gmail.com";
 
             const templateParams = {
-                name: name,
-                email: email,
+                from_name: from_name,
+                from_email: from_email,
                 subject: subject,
                 message: message,
+                to_email: to_email
             };
 
             emailjs.send("service_c7srv2s", "template_trf97gt", templateParams)

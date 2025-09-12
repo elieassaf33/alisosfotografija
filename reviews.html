@@ -18,7 +18,7 @@
 <body>
     <header>
         <div class="header-content">
-            <span class="logo">Alisos Fotografija</span>
+            <img class="logo" src="logo.png" alt="Alisos Fotografija" style="height: 100px; width: auto;">
             <button class="menu-toggle" aria-label="Perjungti meniu">
                 <span class="bar"></span>
                 <span class="bar"></span>
@@ -49,9 +49,7 @@
             <h1 class="page-title">Klientų Atsiliepimai</h1>
             <p class="subtitle">Ką mano klientai sako apie savo patirtį</p>
 
-            <div class="reviews-grid">
-                <!-- Reviews will be dynamically loaded here -->
-                <div class="no-reviews">Kol kas nėra atsiliepimų.</div>
+            <div class="reviews-grid" id="reviewsGrid">
             </div>
 
             <div class="review-form-container">
@@ -83,7 +81,6 @@
                     </div>
                     <button type="submit" class="submit-button">
                         <span>Pateikti Atsiliepimą</span>
-                        <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
             </div>
@@ -99,90 +96,165 @@
         </div>
     </main>
     <script src="js/scripts.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const stars = document.querySelectorAll('.rating-stars .star');
-            const ratingInput = document.getElementById('id_rating');
-            const ratingText = document.querySelector('.rating-text');
-            const form = document.getElementById('reviewForm');
-            const successPopup = document.getElementById('successPopup');
+    <script type="module">
+import { 
+    initializeApp 
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { 
+    getFirestore, collection, addDoc, serverTimestamp,
+    query, orderBy, onSnapshot 
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-            const ratingDescriptions = {
-                0: 'Spauskite žvaigždutes įvertinimui',
-                1: 'Labai blogai',
-                2: 'Blogai',
-                3: 'Vidutiniškai',
-                4: 'Gerai',
-                5: 'Puiku'
-            };
+// 🔹 Firebase initialization
+const firebaseConfig = {
+    apiKey: "AIzaSyC6P-2nngV7gL7f7UeJICkJ_uwOikFFK50",
+    authDomain: "alisos-fotografija.firebaseapp.com",
+    projectId: "alisos-fotografija",
+    storageBucket: "alisos-fotografija.appspot.com",
+    messagingSenderId: "394303533680",
+    appId: "1:394303533680:web:8839ce95758766463c7ab5",
+};
 
-            // Handle star rating
-            stars.forEach(star => {
-                star.addEventListener('click', function () {
-                    const rating = this.dataset.rating;
-                    ratingInput.value = rating;
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-                    stars.forEach(s => {
-                        s.textContent = s.dataset.rating <= rating ? '★' : '☆';
-                        s.classList.toggle('active', s.dataset.rating <= rating);
-                    });
+document.addEventListener('DOMContentLoaded', function () {
+    const stars = document.querySelectorAll('.rating-stars .star');
+    const ratingInput = document.getElementById('id_rating');
+    const ratingText = document.querySelector('.rating-text');
+    const form = document.getElementById('reviewForm');
+    const successPopup = document.getElementById('successPopup');
+    const reviewsGrid = document.querySelector('.reviews-grid');
+    const closeBtn = successPopup.querySelector('button');
 
-                    ratingText.textContent = ratingDescriptions[rating];
-                });
+    const ratingDescriptions = {
+        0: 'Spauskite žvaigždutes įvertinimui',
+        1: 'Labai blogai',
+        2: 'Blogai',
+        3: 'Vidutiniškai',
+        4: 'Gerai',
+        5: 'Puiku'
+    };
 
-                star.addEventListener('mouseover', function () {
-                    const rating = this.dataset.rating;
-                    stars.forEach(s => {
-                        s.textContent = s.dataset.rating <= rating ? '★' : '☆';
-                    });
-                });
+    // ⭐ Star rating logic
+    stars.forEach(star => {
+        star.addEventListener('click', function () {
+            const rating = this.dataset.rating;
+            ratingInput.value = rating;
 
-                star.addEventListener('mouseout', function () {
-                    const currentRating = ratingInput.value;
-                    stars.forEach(s => {
-                        s.textContent = s.dataset.rating <= currentRating ? '★' : '☆';
-                    });
-                });
+            stars.forEach(s => {
+                s.textContent = s.dataset.rating <= rating ? '★' : '☆';
+                s.classList.toggle('active', s.dataset.rating <= rating);
             });
 
-            // Handle form submission
-            form.addEventListener('submit', function (event) {
-                event.preventDefault(); // Prevent actual form submission
+            ratingText.textContent = ratingDescriptions[rating];
+        });
 
-                const name = document.getElementById('id_client_name').value;
-                const rating = document.getElementById('id_rating').value;
-                const reviewText = document.getElementById('id_review_text').value;
-
-                const templateParams = {
-                    name: name,
-                    rating: rating,
-                    review_text: reviewText,
-                };
-
-                // Send review via EmailJS
-                emailjs.send("service_c7srv2s", "template_i8myed4", templateParams)
-                    .then(function(response) {
-                        console.log("SUCCESS!", response.status, response.text);
-                        successPopup.style.display = 'block';
-                        form.reset(); // Reset the form fields
-                        ratingInput.value = 0; // Reset the rating
-                        stars.forEach(star => {
-                            star.textContent = '☆';
-                            star.classList.remove('active');
-                        });
-                        ratingText.textContent = ratingDescriptions[0];
-                    }, function(error) {
-                        console.error("FAILED...", error);
-                        alert("Įvyko klaida siunčiant atsiliepimą. Bandykite dar kartą.");
-                    });
+        star.addEventListener('mouseover', function () {
+            const rating = this.dataset.rating;
+            stars.forEach(s => {
+                s.textContent = s.dataset.rating <= rating ? '★' : '☆';
             });
         });
 
-        function closePopup() {
-            const successPopup = document.getElementById('successPopup');
-            successPopup.style.display = 'none'; // Hide the popup
+        star.addEventListener('mouseout', function () {
+            const currentRating = ratingInput.value;
+            stars.forEach(s => {
+                s.textContent = s.dataset.rating <= currentRating ? '★' : '☆';
+            });
+        });
+    });
+
+    // 📩 Form submission
+    form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const name = document.getElementById('id_client_name').value;
+        const rating = parseInt(ratingInput.value);
+        const reviewText = document.getElementById('id_review_text').value;
+
+        if (!name || !rating || !reviewText) {
+            alert("Užpildykite visus laukus!");
+            return;
         }
-    </script>
+
+        try {
+            const newDoc = {
+                reviewer: name,
+                rating: rating,
+                text: reviewText,
+                createdAt: serverTimestamp()
+            };
+
+            // Save to Firestore
+            await addDoc(collection(db, "reviews"), newDoc);
+
+            // Update localStorage cache immediately
+            let cached = JSON.parse(localStorage.getItem('reviews') || '[]');
+            cached.unshift(newDoc);
+            localStorage.setItem('reviews', JSON.stringify(cached));
+
+            // Update DOM immediately
+            reviewsGrid.prepend(renderReview(newDoc));
+
+            // Reset form
+            successPopup.style.display = 'block';
+            form.reset();
+            ratingInput.value = 0;
+            stars.forEach(star => {
+                star.textContent = '☆';
+                star.classList.remove('active');
+            });
+            ratingText.textContent = ratingDescriptions[0];
+
+        } catch (error) {
+            console.error("Klaida:", error);
+            alert("Nepavyko išsaugoti atsiliepimo.");
+        }
+    });
+
+    // 🔄 Render review element
+    function renderReview(data) {
+        const reviewEl = document.createElement('div');
+        reviewEl.classList.add('review-card');
+        reviewEl.innerHTML = `
+            <h3 class="reviewer">${data.reviewer}</h3>
+            <div class="review-rating">${'★'.repeat(data.rating)}${'☆'.repeat(5 - data.rating)}</div>
+            <p class="review-text">${data.text}</p>
+        `;
+        return reviewEl;
+    }
+
+    // 🔹 Load reviews from localStorage first for instant display
+    const cachedReviews = JSON.parse(localStorage.getItem('reviews') || '[]');
+    cachedReviews.forEach(r => reviewsGrid.appendChild(renderReview(r)));
+
+    // 🔹 Firestore real-time listener to update grid
+    const q = query(collection(db, "reviews"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+        const freshData = [];
+        reviewsGrid.innerHTML = "";
+        snapshot.forEach(doc => {
+            const reviewData = doc.data();
+            freshData.push(reviewData);
+            reviewsGrid.appendChild(renderReview(reviewData));
+        });
+        // Update localStorage cache
+        localStorage.setItem('reviews', JSON.stringify(freshData));
+    });
+    closeBtn.addEventListener('click', () => {
+        successPopup.style.display = 'none';
+    });
+});
+
+function closePopup() {
+    const successPopup = document.getElementById('successPopup');
+    successPopup.style.display = 'none';
+}
+</script>
+
+
+
     <style>
         .reviews-container {
             max-width: 1200px;
@@ -361,11 +433,11 @@
         }
     
         .submit-button {
-            background: #007bff;
+            background: var(--accent-color);
             color: white;
             padding: 15px 30px;
             border: none;
-            border-radius: 4px;
+            border-radius: 30px;
             font-size: 1.1em;
             cursor: pointer;
             display: flex;
@@ -376,7 +448,7 @@
         }
     
         .submit-button:hover {
-            background: #0056b3;
+            background: #978137ff;
         }
     
         @media (max-width: 768px) {

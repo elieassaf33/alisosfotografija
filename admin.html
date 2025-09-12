@@ -62,11 +62,24 @@
 
         <button id="uploadBtn">Upload</button>
         <div id="uploadStatus"></div>
+        <h2>Add Review</h2>
+        <label for="reviewer">Name:</label>
+        <input type="text" id="reviewer" placeholder="Reviewer name">
+
+        <label for="reviewText">Review:</label>
+        <textarea id="reviewText" placeholder="Write the review..." rows="4"></textarea>
+
+        <label for="rating">Rating (1-5):</label>
+        <input type="number" id="rating" min="1" max="5">
+
+        <button id="addReviewBtn">Add Review</button>
+        <div id="reviewStatus"></div>
 
         <hr>
         <h2>Manage Photos</h2>
         <button id="loadPhotosBtn">Load Photos</button>
         <div id="photos-container"></div>
+        
     </div>
 
     <script type="module">
@@ -216,6 +229,43 @@
                 photosContainer.innerHTML = "<p>Failed to load photos.</p>";
             }
         });
+    const addReviewBtn = document.getElementById('addReviewBtn');
+    const reviewerInput = document.getElementById('reviewer');
+    const reviewTextInput = document.getElementById('reviewText');
+    const ratingInput = document.getElementById('rating');
+    const reviewStatus = document.getElementById('reviewStatus');
+
+    addReviewBtn.addEventListener('click', async () => {
+        const reviewer = reviewerInput.value.trim();
+        const reviewText = reviewTextInput.value.trim();
+        const rating = parseInt(ratingInput.value);
+
+        if (!reviewer || !reviewText || !rating) {
+            reviewStatus.textContent = "All fields are required!";
+            return;
+        }
+
+        reviewStatus.textContent = "Saving review...";
+
+        try {
+            await addDoc(collection(db, "reviews"), {
+                reviewer: reviewer,
+                text: reviewText,
+                rating: rating,
+                createdAt: serverTimestamp()
+            });
+
+            reviewStatus.textContent = "Review added!";
+            reviewerInput.value = "";
+            reviewTextInput.value = "";
+            ratingInput.value = "";
+
+        } catch (error) {
+            console.error(error);
+            reviewStatus.textContent = "Failed to save review.";
+        }
+    });
+
     </script>
 </body>
 </html>
