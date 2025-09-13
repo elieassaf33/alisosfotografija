@@ -30,10 +30,10 @@
                     <li class="portfolio-dropdown">
                         <a href="portfolio.html">Portfolio</a>
                         <div class="portfolio-dropdown-content">
-                            <a href="portrait.html">Studija</a>
-                            <a href="nature.html">Gamta</a>
+                            <a href="studio.html">Studija</a>
+                            <a href="portrait.html">Portretai</a>
                             <a href="family.html">Šeima</a>
-                            <a href="events.html">Renginiai</a>
+                            <a href="events.html">Vestuvės</a>
                         </div>       
                     </li>
                     <li><a href="prices.html">Kainos</a></li>
@@ -377,6 +377,7 @@ function closePopup() {
             display: flex;
             flex-direction: column;
             gap: 8px;
+            
         }
     
         .form-label {
@@ -459,8 +460,15 @@ function closePopup() {
             .review-form-container {
                 padding: 20px;
             }
+            
+            .review-form {
+                word-wrap: break-word;
+            }
+            .form-group {
+                width: 95%;
+            }   
+            
         }
-    
         .review-popup {
             display: none;
             position: fixed;
@@ -519,6 +527,16 @@ function closePopup() {
         }
     
         @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes fadeInUp {
             from {
                 opacity: 0;
                 transform: translateY(20px);

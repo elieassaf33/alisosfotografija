@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gamtos Fotografija</title>
-    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
+    <title>Studija</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
+
         .gallery-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -90,10 +90,10 @@
                     <li class="portfolio-dropdown">
                         <a href="portfolio.html">Portfolio</a>
                         <div class="portfolio-dropdown-content">
-                            <a href="portrait.html">Studija</a>
-                            <a href="nature.html">Gamta</a>
+                            <a href="studio.html">Studija</a>
+                            <a href="portrait.html">Portretai</a>
                             <a href="family.html">Šeima</a>
-                            <a href="events.html">Renginiai</a>
+                            <a href="events.html">Vestuvės</a>
                         </div>       
                     </li>
                     <li><a href="prices.html">Kainos</a></li>
@@ -104,14 +104,18 @@
             </nav>
         </div>
     </header>
+
     <main>
         <div class="gallery-container">
-            <h1 class="section-title">Gamtos Fotografija</h1>
-            <p class="section-description">Gamtos grožis</p>
+            <h1 class="section-title">Studijos Fotografija</h1>
+            <p class="section-description"></p>
+            
             <div class="photo-grid" id="photoGrid">
-                <!-- Photos will load here -->
+                <!-- Photos will be loaded here -->
             </div>
         </div>
+        <!-- Lightbox is now handled by lightbox.js -->
+
     </main>
     <script src="js/scripts.js"></script>
     <script src="js/lightbox.js"></script>
@@ -122,6 +126,7 @@ import { getFirestore, collection, query, where, getDocs, orderBy, onSnapshot } 
 // Initialize lightbox
 initializeLightbox();
 
+// 🔹 Firebase config
 const firebaseConfig = {
     apiKey: "AIzaSyC6P-2nngV7gL7f7UeJICkJ_uwOikFFK50",
     authDomain: "alisos-fotografija.firebaseapp.com",
@@ -133,11 +138,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 const photoGrid = document.getElementById('photoGrid');
-const category = 'nature'; // category for this page
+const category = 'portrait'; // category for this page
 
-// Render photo element
+// 🔹 Render photo element
 function renderPhoto(data, index) {
     const photoItem = document.createElement('div');
     photoItem.className = 'photo-item';
@@ -165,16 +169,18 @@ function renderPhoto(data, index) {
     return photoItem;
 }
 
-// Load cached photos first for instant display
+// 🔹 Load cached photos first for instant display
 const cachedPhotos = JSON.parse(localStorage.getItem(`photos_${category}`) || '[]');
 cachedPhotos.forEach(p => photoGrid.appendChild(renderPhoto(p)));
 
-// Firestore real-time updates
+// 🔹 Firestore real-time updates
 const q = query(
     collection(db, "photos"),
     where("category", "==", category),
     orderBy("createdAt", "desc")
 );
+
+// If you want real-time updates instead of one-time load, use onSnapshot
 
 // If you want real-time updates instead of one-time load, use onSnapshot
 onSnapshot(q, (snapshot) => {
