@@ -113,12 +113,15 @@
             </div>
         </div>
     </main>
-
+    <script src="js/scripts.js"></script>
+    <script src="js/lightbox.js"></script>
     <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getFirestore, collection, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-// 🔹 Firebase config
+// Initialize lightbox
+initializeLightbox();
+
 const firebaseConfig = {
     apiKey: "AIzaSyC6P-2nngV7gL7f7UeJICkJ_uwOikFFK50",
     authDomain: "alisos-fotografija.firebaseapp.com",
@@ -134,8 +137,8 @@ const db = getFirestore(app);
 const photoGrid = document.getElementById('photoGrid');
 const category = 'nature'; // category for this page
 
-// 🔹 Render photo element
-function renderPhoto(data) {
+// Render photo element
+function renderPhoto(data, index) {
     const photoItem = document.createElement('div');
     photoItem.className = 'photo-item';
     photoItem.innerHTML = `
@@ -152,14 +155,21 @@ function renderPhoto(data) {
             photoItem.classList.add('vertical');
         }
     });
+    
+    img.addEventListener('click', () => {
+        const index = Array.from(photoGrid.children).indexOf(photoItem);
+        if (index !== -1) {
+            showLightbox(index);
+        }
+    });
     return photoItem;
 }
 
-// 🔹 Load cached photos first for instant display
+// Load cached photos first for instant display
 const cachedPhotos = JSON.parse(localStorage.getItem(`photos_${category}`) || '[]');
 cachedPhotos.forEach(p => photoGrid.appendChild(renderPhoto(p)));
 
-// 🔹 Firestore real-time updates
+// Firestore real-time updates
 const q = query(
     collection(db, "photos"),
     where("category", "==", category),
@@ -169,12 +179,23 @@ const q = query(
 // If you want real-time updates instead of one-time load, use onSnapshot
 onSnapshot(q, (snapshot) => {
     const freshData = [];
+    const newImages = [];
     photoGrid.innerHTML = ''; // clear grid
-    snapshot.forEach(doc => {
+
+    snapshot.forEach((doc, index) => {
         const data = doc.data();
         freshData.push(data);
-        photoGrid.appendChild(renderPhoto(data));
+        newImages.push({ 
+            src: data.url, 
+            title: data.caption || '' 
+        });
+        photoGrid.appendChild(renderPhoto(data, index));
     });
+
+    // Update the images array atomically
+    images = newImages;
+    
+    // Store the fresh data
     localStorage.setItem(`photos_${category}`, JSON.stringify(freshData));
 });
 

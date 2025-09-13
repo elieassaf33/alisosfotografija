@@ -4,61 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portretų Fotografija</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
-        .gallery-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .section-description {
-            text-align: center;
-            color: #666;
-            margin-bottom: 40px;
-            font-size: 1.2em;
-        }
-
-        .photo-grid {
-            display: grid;
-            grid-auto-rows: 500px; 
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));      /* height adjusts based on content */
-            gap: 15px;
-            grid-auto-flow: dense;       /* fills gaps automatically */
-        }
-
-        .photo-item {
-            position: relative;
-            border-radius: 10px;
-            overflow: hidden;
-            height: 100%;
-            width: 100%;
-            object-fit: cover;
-            background: transparent;
-        }
-
-        .image-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .gallery-image {
-            width:  100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center;
-            display: block;
-            background: transparent;
-        }
 
         @media (max-width: 768px) {
             .photo-grid {
@@ -77,6 +25,11 @@
     <header>
         <div class="header-content">
             <img class="logo" src="logo.png" alt="Alisos Fotografija" style="height: 100px; width: auto;">
+            <button class="menu-toggle" aria-label="Perjungti meniu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
             <nav class="nav-container">
                 <ul class="nav">
                     <li><a href="index.html">Pradžia</a></li>
@@ -107,11 +60,17 @@
                 <!-- Photos will be loaded here -->
             </div>
         </div>
-    </main>
+        <!-- Lightbox is now handled by lightbox.js -->
 
+    </main>
+    <script src="js/scripts.js"></script>
+    <script src="js/lightbox.js"></script>
     <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getFirestore, collection, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+// Initialize lightbox
+initializeLightbox();
 
 // 🔹 Firebase config
 const firebaseConfig = {
@@ -125,12 +84,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 const photoGrid = document.getElementById('photoGrid');
 const category = 'portrait'; // category for this page
 
 // 🔹 Render photo element
-function renderPhoto(data) {
+function renderPhoto(data, index) {
     const photoItem = document.createElement('div');
     photoItem.className = 'photo-item';
     photoItem.innerHTML = `
@@ -145,6 +103,13 @@ function renderPhoto(data) {
             photoItem.classList.add('horizontal');
         } else {
             photoItem.classList.add('vertical');
+        }
+    });
+    
+    img.addEventListener('click', () => {
+        const index = Array.from(photoGrid.children).indexOf(photoItem);
+        if (index !== -1) {
+            showLightbox(index);
         }
     });
     return photoItem;
@@ -162,14 +127,27 @@ const q = query(
 );
 
 // If you want real-time updates instead of one-time load, use onSnapshot
+
+// If you want real-time updates instead of one-time load, use onSnapshot
 onSnapshot(q, (snapshot) => {
     const freshData = [];
+    const newImages = [];
     photoGrid.innerHTML = ''; // clear grid
-    snapshot.forEach(doc => {
+
+    snapshot.forEach((doc, index) => {
         const data = doc.data();
         freshData.push(data);
-        photoGrid.appendChild(renderPhoto(data));
+        newImages.push({ 
+            src: data.url, 
+            title: data.caption || '' 
+        });
+        photoGrid.appendChild(renderPhoto(data, index));
     });
+
+    // Update the images array atomically
+    images = newImages;
+    
+    // Store the fresh data
     localStorage.setItem(`photos_${category}`, JSON.stringify(freshData));
 });
 

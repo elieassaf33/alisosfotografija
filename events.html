@@ -114,10 +114,14 @@
             </div>
         </div>
     </main>
-
+    <script src="js/scripts.js"></script>
+    <script src="js/lightbox.js"></script>
     <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getFirestore, collection, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+// Initialize lightbox
+initializeLightbox();
 
 // 🔹 Firebase config
 const firebaseConfig = {
@@ -136,7 +140,7 @@ const photoGrid = document.getElementById('photoGrid');
 const category = 'events'; // category for this page
 
 // 🔹 Render photo element
-function renderPhoto(data) {
+function renderPhoto(data, index) {
     const photoItem = document.createElement('div');
     photoItem.className = 'photo-item';
     photoItem.innerHTML = `
@@ -151,6 +155,13 @@ function renderPhoto(data) {
             photoItem.classList.add('horizontal');
         } else {
             photoItem.classList.add('vertical');
+        }
+    });
+    
+    img.addEventListener('click', () => {
+        const index = Array.from(photoGrid.children).indexOf(photoItem);
+        if (index !== -1) {
+            showLightbox(index);
         }
     });
     return photoItem;
@@ -170,12 +181,23 @@ const q = query(
 // If you want real-time updates instead of one-time load, use onSnapshot
 onSnapshot(q, (snapshot) => {
     const freshData = [];
+    const newImages = [];
     photoGrid.innerHTML = ''; // clear grid
-    snapshot.forEach(doc => {
+
+    snapshot.forEach((doc, index) => {
         const data = doc.data();
         freshData.push(data);
-        photoGrid.appendChild(renderPhoto(data));
+        newImages.push({ 
+            src: data.url, 
+            title: data.caption || '' 
+        });
+        photoGrid.appendChild(renderPhoto(data, index));
     });
+
+    // Update the images array atomically
+    images = newImages;
+    
+    // Store the fresh data
     localStorage.setItem(`photos_${category}`, JSON.stringify(freshData));
 });
 

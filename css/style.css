@@ -98,6 +98,9 @@ header {
 @media (max-width: 768px) {
     .menu-toggle {
         display: block;
+        position: absolute;
+        top: 2rem;     /* distance from top */
+        right: 2rem;
     }
 
     .nav-container {
@@ -1129,3 +1132,60 @@ img {
         .horizontal {
             aspect-ratio: 4 / 3;
         }
+.lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    text-align: center;
+}
+
+.lightbox.show {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.lightbox img {
+    max-width: 90%;
+    max-height: 90vh;
+    object-fit: contain;
+}
+
+.lightbox-close, .lightbox-prev, .lightbox-next {
+    position: absolute;
+    color: white;
+    font-size: 40px;
+    cursor: pointer;
+    user-select: none;
+    padding: 20px;
+}
+
+.lightbox-close {
+    top: 10px;
+    right: 25px;
+    font-size: 35px;
+}
+
+.lightbox-prev {
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.lightbox-next {
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.lightbox-close:hover,
+.lightbox-prev:hover,
+.lightbox-next:hover {
+    color: #ccc;
+}
+
