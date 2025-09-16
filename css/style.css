@@ -1239,6 +1239,7 @@ background-color: var(--background-color);
   border: none;
   cursor: pointer;
   display: flex;
+  color: black;
   justify-content: space-between;
   font-weight: normal;
   font-size: 20px;
