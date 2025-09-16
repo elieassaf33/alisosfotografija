@@ -557,7 +557,23 @@ img {
     text-align: center;
     color: #666;
     margin-bottom: 3rem;
-    font-size: 1.2rem;
+    font-size:
+     1.2rem;
+}
+.link-btn {
+    background: var(--accent-color);
+    color: white;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 30px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+
+.link-btn:hover {
+    background: #978137ff;
 }
 
 .pricing-grid {
