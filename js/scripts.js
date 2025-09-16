@@ -39,4 +39,43 @@ document.addEventListener('DOMContentLoaded', () => {
             navContainer.classList.remove('active');
         }
     });
+      const links = document.querySelectorAll('header nav a');
+
+  links.forEach(link => {
+    link.addEventListener('click', function(e) {
+      const url = this.href;
+
+      // Only apply for internal links
+      if (!url.includes(location.hostname)) return;
+
+      e.preventDefault();           // stop immediate navigation
+      document.body.classList.add('fade-out'); // trigger fade out
+
+      // Navigate after transition
+      setTimeout(() => {
+        window.location.href = url;
+      }, 400); // matches CSS transition duration
+    });
+  });
+document.querySelectorAll('.faq-question').forEach(button => {
+  button.addEventListener('click', () => {
+    const answer = button.nextElementSibling; // should be the .faq-answer
+    const icon = button.querySelector('.faq-icon');
+
+    // Close all other answers
+    document.querySelectorAll('.faq-answer').forEach(a => {
+      if (a !== answer) {
+        a.classList.remove('open');
+        const otherIcon = a.previousElementSibling.querySelector('.faq-icon');
+        if(otherIcon) otherIcon.textContent = '+';
+      }
+    });
+
+    // Toggle current answer
+    answer.classList.toggle('open');
+    icon.textContent = answer.classList.contains('open') ? '-' : '+';
+  });
+});
+
+
 });
