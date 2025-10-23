@@ -161,7 +161,6 @@
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
 
-            // Binary search to get max quality under maxSizeMB
             const compressBlob = async () => {
                 let low = 0.1;
                 let high = 1.0;
@@ -174,14 +173,14 @@
 
                     const sizeMB = blob.size / (1024 * 1024);
                     if (sizeMB > maxSizeMB) {
-                        high = quality; // file too big, reduce quality
+                        high = quality; // too big, reduce quality
                     } else {
-                        low = quality; // can increase quality
-                        bestBlob = blob; // save best so far
+                        low = quality; // under limit, try higher quality
+                        bestBlob = blob;
                     }
                 }
 
-                resolve(bestBlob || file); // return compressed blob or original if under limit
+                resolve(bestBlob || file); // return compressed or original
             };
 
             compressBlob();
@@ -192,6 +191,46 @@
     });
 };
 
+// Usage in upload
+try {
+    let fileToUpload = file;
+
+    // Compress only if over maxSizeMB
+    if (file.size > 10 * 1024 * 1024) {
+        uploadStatus.textContent = 'Compressing large file...';
+        fileToUpload = await compressImage(file, 10); // max 10 MB
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileToUpload, file.name);
+    formData.append('upload_preset', 'studio_upload');
+    formData.append('folder', category);
+
+    uploadStatus.textContent = 'Uploading to Cloudinary...';
+
+    const response = await fetch('https://api.cloudinary.com/v1_1/dvwbgfsbg/upload', {
+        method: 'POST',
+        body: formData
+    });
+    const data = await response.json();
+
+    if (!data.secure_url) throw new Error('Upload failed');
+
+    uploadStatus.textContent = 'Saving URL to Firestore...';
+
+    await addDoc(collection(db, "photos"), {
+        url: data.secure_url,
+        category: category,
+        caption: file.name,
+        createdAt: serverTimestamp()
+    });
+
+    uploadStatus.textContent = 'Upload successful!';
+    fileInput.value = '';
+} catch (error) {
+    console.error(error);
+    uploadStatus.textContent = 'Upload failed. Check console.';
+}
 
 
         // Load and display photos
