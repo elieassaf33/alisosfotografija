@@ -193,58 +193,6 @@
 };
 
 
-    // Function to compress until under max size
-    const compressImageToMaxSize = async (file, maxSizeMB = 10) => {
-        let quality = 0.8;
-        let blob = await compressImage(file, 1024, 1024, quality);
-
-        while (blob.size > maxSizeMB * 1024 * 1024 && quality > 0.3) {
-            quality -= 0.05;
-            blob = await compressImage(file, 1024, 1024, quality);
-        }
-        return blob;
-    };
-
-    try {
-        let fileToUpload = file;
-
-        // Compress only if over 10 MB
-        if (file.size > 10 * 1024 * 1024) {
-            uploadStatus.textContent = 'Compressing large file...';
-            fileToUpload = await compressImageToMaxSize(file);
-        }
-
-        const formData = new FormData();
-        formData.append('file', fileToUpload, file.name);
-        formData.append('upload_preset', 'studio_upload');
-        formData.append('folder', category);
-
-        uploadStatus.textContent = 'Uploading to Cloudinary...';
-
-        const response = await fetch('https://api.cloudinary.com/v1_1/dvwbgfsbg/upload', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await response.json();
-
-        if (!data.secure_url) throw new Error('Upload failed');
-
-        uploadStatus.textContent = 'Saving URL to Firestore...';
-
-        await addDoc(collection(db, "photos"), {
-            url: data.secure_url,
-            category: category,
-            caption: file.name,
-            createdAt: serverTimestamp()
-        });
-
-        uploadStatus.textContent = 'Upload successful!';
-        fileInput.value = '';
-    } catch (error) {
-        console.error(error);
-        uploadStatus.textContent = 'Upload failed. Check console.';
-    }
-});
 
         // Load and display photos
         loadPhotosBtn.addEventListener('click', async () => {
