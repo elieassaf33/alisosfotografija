@@ -1,43 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Alisos Fotografija Admin</title>
-    <!-- Decap CMS -->
-    <script src="js/decap-cms.js"></script>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Alisos Fotografija Admin</title>
+  <!-- Self-hosted Decap CMS -->
+  <script src="js/decap-cms.js"></script>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+  </style>
 </head>
 <body>
-    <script>
-        // ✅ localStorage fallback if blocked by browser
-        function storageAvailable(type) {
-            try {
-                var storage = window[type],
-                    x = '__storage_test__';
-                storage.setItem(x, x);
-                storage.removeItem(x);
-                return true;
-            }
-            catch(e) {
-                return false;
-            }
-        }
+  <script>
+    // ✅ localStorage fallback (in-memory) if blocked
+    function storageAvailable(type) {
+      try {
+        var storage = window[type], x = '__storage_test__';
+        storage.setItem(x, x);
+        storage.removeItem(x);
+        return true;
+      } catch(e){ return false; }
+    }
 
-        if (!storageAvailable('localStorage')) {
-            window.localStorage = {
-                _data: {},
-                setItem: function(k,v){ this._data[k]=v; },
-                getItem: function(k){ return this._data[k] || null; },
-                removeItem: function(k){ delete this._data[k]; },
-                clear: function(){ this._data = {}; }
-            };
-            console.warn('LocalStorage blocked — using in-memory fallback.');
-        }
-    </script>
+    if (!storageAvailable('localStorage')) {
+      window.localStorage = {
+        _data: {},
+        setItem: function(k,v){ this._data[k]=v; },
+        getItem: function(k){ return this._data[k] || null; },
+        removeItem: function(k){ delete this._data[k]; },
+        clear: function(){ this._data = {}; }
+      };
+      console.warn('LocalStorage blocked — using in-memory fallback.');
+    }
+
+    // ✅ Wait for DOM to be fully loaded
+    document.addEventListener("DOMContentLoaded", function() {
+      // CMS will auto-initialize if config.yml is present in /admin/
+      if (typeof CMS !== "undefined") {
+        console.log("Decap CMS loaded successfully.");
+      } else {
+        console.error("Decap CMS failed to load. Check js/decap-cms.js path.");
+      }
+    });
+  </script>
 </body>
 </html>
