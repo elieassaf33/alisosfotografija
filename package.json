@@ -1,6 +1,25 @@
 {
   "dependencies": {
     "@dataconnect/generated": "file:src/dataconnect-generated",
-    "@emailjs/browser": "^4.4.1"
-  }
+    "@emailjs/browser": "^4.4.1",
+    "firebase": "^12.5.0"
+  },
+  "name": "test",
+  "version": "1.0.0",
+  "main": "exportPhotos.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ElieAssaf33/test.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ElieAssaf33/test/issues"
+  },
+  "homepage": "https://github.com/ElieAssaf33/test#readme",
+  "description": ""
 }

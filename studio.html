@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <style>
-
         .gallery-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -31,9 +30,9 @@
         .photo-grid {
             display: grid;
             grid-auto-rows: 400px; 
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));      /* height adjusts based on content */
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 15px;
-            grid-auto-flow: dense;       /* fills gaps automatically */
+            grid-auto-flow: dense;
         }
 
         .photo-item {
@@ -42,8 +41,7 @@
             overflow: hidden;
             height: 100%;
             width: 100%;
-            object-fit: cover;
-            background: transparent;
+            background: #f4f4f4;
         }
 
         .image-container {
@@ -54,12 +52,16 @@
         }
 
         .gallery-image {
-            width:  100%;
+            width: 100%;
             height: 100%;
             object-fit: cover;
             object-position: center;
             display: block;
-            background: transparent;
+            transition: transform 0.4s ease;
+        }
+
+        .gallery-image:hover {
+            transform: scale(1.05);
         }
 
         @media (max-width: 768px) {
@@ -114,100 +116,66 @@
                 <!-- Photos will be loaded here -->
             </div>
         </div>
-        <!-- Lightbox is now handled by lightbox.js -->
-
     </main>
+
     <footer class="footer">
-        <p>&copy; Alisos Fotografija. Nuotraukų naudojimas galimas tik su autorės sutikumu.</p>
-        </footer>
+        <p>&copy; Alisos Fotografija. Nuotraukų naudojimas galimas tik su autorės sutikimu.</p>
+    </footer>
+
     <script src="js/scripts.js"></script>
     <script src="js/lightbox.js"></script>
     <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+        // Initialize lightbox
+        initializeLightbox();
 
-// Initialize lightbox
-initializeLightbox();
+        const photoGrid = document.getElementById('photoGrid');
+        const category = 'studio';
+        const localCacheKey = `photos_${category}`;
 
-// 🔹 Firebase config
-const firebaseConfig = {
-    apiKey: "AIzaSyC6P-2nngV7gL7f7UeJICkJ_uwOikFFK50",
-    authDomain: "alisos-fotografija.firebaseapp.com",
-    projectId: "alisos-fotografija",
-    storageBucket: "alisos-fotografija.appspot.com",
-    messagingSenderId: "394303533680",
-    appId: "1:394303533680:web:8839ce95758766463c7ab5",
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const photoGrid = document.getElementById('photoGrid');
-const category = 'studio'; // category for this page
-
-// 🔹 Render photo element
-function renderPhoto(data, index) {
-    const photoItem = document.createElement('div');
-    photoItem.className = 'photo-item';
-    photoItem.innerHTML = `
-        <div class="image-container">
-            <img src="${data.url}" alt="${data.caption}" class="gallery-image">
-        </div>
-    `;
-    const img = photoItem.querySelector('img');
-    img.addEventListener('load', () => {
-        const aspectRatio = img.naturalWidth / img.naturalHeight;
-        if (aspectRatio > 1.2) {
-            photoItem.classList.add('horizontal');
-        } else {
-            photoItem.classList.add('vertical');
+        // --- Render single photo element ---
+        function renderPhoto(data, index) {
+            const photoItem = document.createElement('div');
+            photoItem.className = 'photo-item';
+            photoItem.innerHTML = `
+                <div class="image-container">
+                    <img 
+                        src="${data.thumb || data.url}" 
+                        data-full="${data.url}" 
+                        alt="${data.caption || ''}" 
+                        class="gallery-image lazy"
+                        loading="lazy"
+                    >
+                </div>
+            `;
+            const img = photoItem.querySelector('img');
+            img.addEventListener('click', () => {
+                const index = Array.from(photoGrid.children).indexOf(photoItem);
+                if (index !== -1) {
+                    showLightbox(index);
+                }
+            });
+            return photoItem;
         }
-    });
-    
-    img.addEventListener('click', () => {
-        const index = Array.from(photoGrid.children).indexOf(photoItem);
-        if (index !== -1) {
-            showLightbox(index);
+
+        // --- Load cached version first ---
+        const cachedPhotos = JSON.parse(localStorage.getItem(localCacheKey) || '[]');
+        if (cachedPhotos.length > 0) {
+            cachedPhotos.forEach((p, i) => photoGrid.appendChild(renderPhoto(p, i)));
         }
-    });
-    return photoItem;
-}
 
-// 🔹 Load cached photos first for instant display
-const cachedPhotos = JSON.parse(localStorage.getItem(`photos_${category}`) || '[]');
-cachedPhotos.forEach(p => photoGrid.appendChild(renderPhoto(p)));
-
-// 🔹 Firestore real-time updates
-const q = query(
-    collection(db, "photos"),
-    where("category", "==", category),
-    orderBy("createdAt", "desc")
-);
-
-// If you want real-time updates instead of one-time load, use onSnapshot
-
-// If you want real-time updates instead of one-time load, use onSnapshot
-onSnapshot(q, (snapshot) => {
-    const freshData = [];
-    const newImages = [];
-    photoGrid.innerHTML = ''; // clear grid
-
-    snapshot.forEach((doc, index) => {
-        const data = doc.data();
-        freshData.push(data);
-        newImages.push({ 
-            src: data.url, 
-            title: data.caption || '' 
-        });
-        photoGrid.appendChild(renderPhoto(data, index));
-    });
-
-    // Update the images array atomically
-    images = newImages;
-    
-    // Store the fresh data
-    localStorage.setItem(`photos_${category}`, JSON.stringify(freshData));
-});
-
-</script>
+        // --- Fetch from JSON file (fast, CDN cached) ---
+        fetch('/data/studio.json')
+            .then(res => res.json())
+            .then(photos => {
+                if (JSON.stringify(photos) !== JSON.stringify(cachedPhotos)) {
+                    photoGrid.innerHTML = '';
+                    photos.forEach((p, i) => photoGrid.appendChild(renderPhoto(p, i)));
+                    localStorage.setItem(localCacheKey, JSON.stringify(photos));
+                }
+            })
+            .catch(err => {
+                console.error('Failed to load photos:', err);
+            });
+    </script>
 </body>
 </html>

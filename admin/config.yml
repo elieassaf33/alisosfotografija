@@ -1,0 +1,21 @@
+backend:
+  name: github
+  repo: elieassaf33/alisosforografija
+  branch: main
+
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+
+collections:
+  - name: "albums"
+    label: "Albums"
+    folder: "gallery-data"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { name: "title", label: "Album Title" }
+      - { name: "category", label: "Category", widget: "select", options: ["studio", "family", "portrait", "events"] }
+      - { name: "photos", label: "Photos", widget: "list", fields: [
+          { name: "image", label: "Image", widget: "image" },
+          { name: "caption", label: "Caption", widget: "string", required: false }
+        ]}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gallery</title>
+  <style>
+    body { font-family: sans-serif; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+    img { width: 100%; border-radius: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Studio Gallery</h1>
+  <div id="gallery" class="grid"></div>
+
+  <script>
+    async function loadAlbum(name) {
+      const res = await fetch(`/gallery-data/${name}.json`);
+      const album = await res.json();
+
+      const gallery = document.getElementById('gallery');
+      gallery.innerHTML = '';
+
+      album.photos.forEach(photo => {
+        const img = document.createElement('img');
+        img.src = photo.image;
+        img.alt = photo.caption || '';
+        gallery.appendChild(img);
+      });
+    }
+
+    // Load one album by default
+    loadAlbum('studio');
+  </script>
+</body>
+</html>
