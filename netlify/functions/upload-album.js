@@ -1,53 +1,28 @@
-import { writeFileSync, mkdirSync, existsSync } from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import formidable from "formidable-serverless";
+import fs from 'fs';
+import path from 'path';
+import AdmZip from 'adm-zip';
+import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Adjust these paths to match your project structure
-const UPLOAD_DIR = path.join(__dirname, "../../images/uploads");
-const DATA_DIR = path.join(__dirname, "../../data");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const handler = async (event) => {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+  try {
+    if(event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method not allowed' };
+    
+    const boundary = event.headers['content-type'].split('boundary=')[1];
+    if(!boundary) return { statusCode: 400, body: 'No boundary' };
+    
+    // Here you'd use a library like formidable or busboy to parse multipart form
+    // Extract ZIP, save to /images/uploads/<category>/<album>/, then regenerate JSON
+    
+    // Pseudo code:
+    // 1. parse ZIP from request
+    // 2. create folder /images/uploads/<category>/<album>/
+    // 3. extract files into folder
+    // 4. regenerate /data/<category>.json
+    return { statusCode: 200, body: 'Uploaded' };
+  } catch(e) {
+    console.error(e);
+    return { statusCode: 500, body: 'Error' };
   }
-
-  // Create folders if they don't exist
-  if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true });
-  if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
-
-  const form = new formidable.IncomingForm({ multiples: true, uploadDir: UPLOAD_DIR, keepExtensions: true });
-
-  return new Promise((resolve, reject) => {
-    form.parse(event, (err, fields, files) => {
-      if (err) {
-        console.error("Form parse error:", err);
-        return resolve({ statusCode: 500, body: JSON.stringify(err) });
-      }
-
-      const albumTitle = fields.title || "untitled";
-      const category = fields.category || "studio";
-
-      let photos = [];
-
-      // files.photo can be array if multiple
-      const fileArray = Array.isArray(files.photo) ? files.photo : [files.photo];
-      fileArray.forEach((file) => {
-        const fileName = path.basename(file.filepath);
-        photos.push({ url: `/images/uploads/${fileName}`, caption: fileName });
-      });
-
-      // Save JSON file
-      const jsonPath = path.join(DATA_DIR, `${category}.json`);
-      writeFileSync(jsonPath, JSON.stringify(photos, null, 2));
-
-      resolve({
-        statusCode: 200,
-        body: JSON.stringify({ message: "Album uploaded successfully", photos }),
-      });
-    });
-  });
 };

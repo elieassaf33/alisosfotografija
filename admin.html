@@ -1,120 +1,91 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="lt">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin - Albums</title>
+<title>Admin Upload</title>
 <style>
 body { font-family: sans-serif; padding: 20px; }
-h1 { margin-bottom: 10px; }
-input, select, button { margin: 5px 0; display: block; }
-.photo-list, .album-list { margin-top: 20px; }
-.photo-item, .album-item { margin-bottom: 5px; }
-.album-item button { margin-left: 10px; }
+input, button { margin: 10px 0; display: block; }
+.album-list { margin-top: 20px; }
+.album-card { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
 </style>
 </head>
 <body>
 <h1>Upload Album</h1>
 
-<label>Album Title</label>
-<input type="text" id="albumTitle" placeholder="Album Title">
-
-<label>Category</label>
-<select id="albumCategory">
-  <option value="studio">Studio</option>
-  <option value="family">Family</option>
-  <option value="portrait">Portrait</option>
-  <option value="events">Events</option>
+<label for="category">Category:</label>
+<select id="category">
+  <option value="studio">Studija</option>
+  <option value="family">Šeima</option>
+  <option value="portrait">Portretai</option>
+  <option value="events">Renginiai</option>
 </select>
 
-<label>Select Album Folder</label>
-<input type="file" id="folderInput" webkitdirectory multiple>
-
+<label for="zipFile">Select ZIP file:</label>
+<input type="file" id="zipFile" accept=".zip">
 <button id="uploadBtn">Upload Album</button>
+<div id="status"></div>
 
-<div class="photo-list" id="photoList"></div>
+<h2>Existing Albums</h2>
+<div id="albumList" class="album-list"></div>
 
-<h1>Existing Albums</h1>
-<div class="album-list" id="albumList"></div>
-
-<script>
-const folderInput = document.getElementById('folderInput');
-const photoList = document.getElementById('photoList');
+<script type="module">
 const uploadBtn = document.getElementById('uploadBtn');
+const zipInput = document.getElementById('zipFile');
+const categorySelect = document.getElementById('category');
+const status = document.getElementById('status');
 const albumList = document.getElementById('albumList');
 
-let files = [];
-
-// Show files before upload
-folderInput.addEventListener('change', (e) => {
-  files = Array.from(e.target.files);
-  photoList.innerHTML = '';
-  files.forEach(f => {
-    const div = document.createElement('div');
-    div.className = 'photo-item';
-    div.textContent = f.name;
-    photoList.appendChild(div);
-  });
-});
-
-// Upload folder
-uploadBtn.addEventListener('click', async () => {
-  const title = document.getElementById('albumTitle').value;
-  const category = document.getElementById('albumCategory').value;
-
-  if (!title || files.length === 0) {
-    alert('Please add a title and select folder files.');
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('title', title);
-  formData.append('category', category);
-  files.forEach(f => formData.append('photos', f));
-
-  const res = await fetch('/.netlify/functions/upload-album', {
-    method: 'POST',
-    body: formData
-  });
-
-  const data = await res.json();
-  if (data.success) {
-    alert('Album uploaded successfully!');
-    loadAlbums();
-  } else {
-    alert('Upload failed: ' + data.error);
-  }
-});
-
-// Load existing albums
+// Load albums
 async function loadAlbums() {
-  albumList.innerHTML = '';
-  const res = await fetch('/.netlify/functions/list-albums');
-  const albums = await res.json();
-  albums.forEach(a => {
-    const div = document.createElement('div');
-    div.className = 'album-item';
-    div.textContent = `${a.title} (${a.category})`;
-    const btn = document.createElement('button');
-    btn.textContent = 'Delete';
-    btn.onclick = async () => {
-      if (confirm(`Delete album "${a.title}"?`)) {
-        const res = await fetch('/.netlify/functions/delete-album', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: a.title, category: a.category })
-        });
-        const data = await res.json();
-        if (data.success) loadAlbums();
-        else alert(data.error);
-      }
-    };
-    div.appendChild(btn);
-    albumList.appendChild(div);
-  });
+  albumList.innerHTML = 'Loading...';
+  try {
+    const category = categorySelect.value;
+    const res = await fetch(`/data/${category}.json`);
+    const albums = await res.json();
+    albumList.innerHTML = '';
+    albums.forEach(a => {
+      const card = document.createElement('div');
+      card.className = 'album-card';
+      card.innerHTML = `<strong>${a.album}</strong> 
+        <button data-album="${a.album}">Delete</button>`;
+      card.querySelector('button').addEventListener('click', async e => {
+        if(confirm(`Delete album ${a.album}?`)){
+          const delRes = await fetch(`/api/delete-album?category=${category}&album=${a.album}`, { method: 'POST' });
+          if(delRes.ok) loadAlbums();
+        }
+      });
+      albumList.appendChild(card);
+    });
+  } catch(e) {
+    albumList.innerHTML = 'Failed to load albums';
+    console.error(e);
+  }
 }
 
-// Initial load
+// Upload ZIP
+uploadBtn.addEventListener('click', async () => {
+  const file = zipInput.files[0];
+  const category = categorySelect.value;
+  if(!file) return alert('Select a ZIP file!');
+  const formData = new FormData();
+  formData.append('zip', file);
+  formData.append('category', category);
+  status.textContent = 'Uploading...';
+  try {
+    const res = await fetch('/api/upload-album', { method: 'POST', body: formData });
+    if(res.ok){
+      status.textContent = 'Upload successful!';
+      loadAlbums();
+    } else {
+      status.textContent = 'Upload failed';
+    }
+  } catch(e){
+    console.error(e);
+    status.textContent = 'Upload failed';
+  }
+});
+
 loadAlbums();
 </script>
 </body>
