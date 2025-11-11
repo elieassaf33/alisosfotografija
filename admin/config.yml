@@ -1,7 +1,7 @@
 backend:
   name: github
   repo: elieassaf33/alisosfotografija
-  branch: main
+  branch: master
 
 media_folder: "images/uploads"
 public_folder: "/images/uploads"
