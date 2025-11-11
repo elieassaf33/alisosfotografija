@@ -1,6 +1,6 @@
 backend:
   name: github
-  repo: elieassaf33/alisosforografija
+  repo: elieassaf33/alisosfotografija
   branch: main
 
 media_folder: "images/uploads"
