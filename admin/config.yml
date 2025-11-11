@@ -1,8 +1,9 @@
 backend:
-  name: auth0
-  domain: dev-ym8i3sgjqm2f84vx.us.auth0.com
-  client_id: zHnAddwVTgRsae4YbTXivIp77nJn5hN0
-  auth_path: "/admin/callback"
+  name: github
+  repo: elieassaf33/alisosfotografija
+  branch: main       # make sure this matches your default branch
+  auth_type: implicit
+
 
 
 media_folder: "images/uploads"
