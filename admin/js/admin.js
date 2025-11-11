@@ -1,28 +1,50 @@
-document.getElementById('createAlbumBtn').addEventListener('click', () => {
-  const title = document.getElementById('albumTitle').value;
+const uploadBtn = document.getElementById('uploadAlbum');
+const existingDiv = document.getElementById('existingAlbums');
+
+uploadBtn.addEventListener('click', async () => {
+  const title = document.getElementById('albumTitle').value.trim();
   const category = document.getElementById('albumCategory').value;
-  const files = document.getElementById('photos').files;
+  const files = document.getElementById('albumFiles').files;
 
-  if (!title || !files.length) return alert('Please fill album title and select photos.');
+  if (!title || !files.length) return alert('Fill title and select files');
 
-  const album = {
-    title,
-    category,
-    photos: []
-  };
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('category', category);
+  Array.from(files).forEach(f => formData.append('photos', f));
 
-  Array.from(files).forEach(file => {
-    album.photos.push({
-      url: `/images/uploads/${file.name}`,
-      caption: file.name
-    });
-  });
-
-  const blob = new Blob([JSON.stringify(album, null, 2)], { type: 'application/json' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `${title.replace(/\s+/g,'-')}.json`;
-  link.click();
-
-  alert('Album JSON created! Upload JSON to /gallery-data/ and images to /images/uploads/.');
+  const res = await fetch('/upload-album', { method: 'POST', body: formData });
+  const data = await res.json();
+  if (data.success) {
+    alert('Album uploaded successfully!');
+    loadAlbums();
+  }
 });
+
+// Load albums
+async function loadAlbums() {
+  existingDiv.innerHTML = '';
+  const res = await fetch('/gallery-data/');
+  const files = await res.json(); // Make sure to list JSON files here, or keep a simple JSON index
+  files.forEach(file => {
+    const folderName = file.replace('.json','');
+    const div = document.createElement('div');
+    div.textContent = folderName;
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', async () => {
+      if (confirm('Delete album?')) {
+        await fetch('/delete-album', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ folderName })
+        });
+        loadAlbums();
+      }
+    });
+    div.appendChild(delBtn);
+    existingDiv.appendChild(div);
+  });
+}
+
+loadAlbums();

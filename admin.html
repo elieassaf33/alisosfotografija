@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Albums</title>
+<style>
+body { font-family: sans-serif; padding: 20px; }
+h1 { margin-bottom: 10px; }
+input, select, button { margin: 5px 0; display: block; }
+.photo-list, .album-list { margin-top: 20px; }
+.photo-item, .album-item { margin-bottom: 5px; }
+.album-item button { margin-left: 10px; }
+</style>
+</head>
+<body>
+<h1>Upload Album</h1>
+
+<label>Album Title</label>
+<input type="text" id="albumTitle" placeholder="Album Title">
+
+<label>Category</label>
+<select id="albumCategory">
+  <option value="studio">Studio</option>
+  <option value="family">Family</option>
+  <option value="portrait">Portrait</option>
+  <option value="events">Events</option>
+</select>
+
+<label>Select Album Folder</label>
+<input type="file" id="folderInput" webkitdirectory multiple>
+
+<button id="uploadBtn">Upload Album</button>
+
+<div class="photo-list" id="photoList"></div>
+
+<h1>Existing Albums</h1>
+<div class="album-list" id="albumList"></div>
+
+<script>
+const folderInput = document.getElementById('folderInput');
+const photoList = document.getElementById('photoList');
+const uploadBtn = document.getElementById('uploadBtn');
+const albumList = document.getElementById('albumList');
+
+let files = [];
+
+// Show files before upload
+folderInput.addEventListener('change', (e) => {
+  files = Array.from(e.target.files);
+  photoList.innerHTML = '';
+  files.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'photo-item';
+    div.textContent = f.name;
+    photoList.appendChild(div);
+  });
+});
+
+// Upload folder
+uploadBtn.addEventListener('click', async () => {
+  const title = document.getElementById('albumTitle').value;
+  const category = document.getElementById('albumCategory').value;
+
+  if (!title || files.length === 0) {
+    alert('Please add a title and select folder files.');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('category', category);
+  files.forEach(f => formData.append('photos', f));
+
+  const res = await fetch('/.netlify/functions/upload-album', {
+    method: 'POST',
+    body: formData
+  });
+
+  const data = await res.json();
+  if (data.success) {
+    alert('Album uploaded successfully!');
+    loadAlbums();
+  } else {
+    alert('Upload failed: ' + data.error);
+  }
+});
+
+// Load existing albums
+async function loadAlbums() {
+  albumList.innerHTML = '';
+  const res = await fetch('/.netlify/functions/list-albums');
+  const albums = await res.json();
+  albums.forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'album-item';
+    div.textContent = `${a.title} (${a.category})`;
+    const btn = document.createElement('button');
+    btn.textContent = 'Delete';
+    btn.onclick = async () => {
+      if (confirm(`Delete album "${a.title}"?`)) {
+        const res = await fetch('/.netlify/functions/delete-album', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: a.title, category: a.category })
+        });
+        const data = await res.json();
+        if (data.success) loadAlbums();
+        else alert(data.error);
+      }
+    };
+    div.appendChild(btn);
+    albumList.appendChild(div);
+  });
+}
+
+// Initial load
+loadAlbums();
+</script>
+</body>
+</html>

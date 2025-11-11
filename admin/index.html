@@ -1,14 +1,6 @@
-<!DOCTYPE html>
-<html lang="lt">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin - Alisos Fotografija</title>
-<link rel="stylesheet" href="../css/style.css">
-</head>
-<body>
 <h1>Admin Panel</h1>
 
+<h2>Create Album</h2>
 <label>Album Title: <input type="text" id="albumTitle"></label><br>
 <label>Category:
   <select id="albumCategory">
@@ -18,11 +10,10 @@
     <option value="events">Events</option>
   </select>
 </label><br>
-<label>Photos: <input type="file" id="photos" multiple></label><br>
-<button id="createAlbumBtn">Create Album JSON</button>
+<label>Select Photos (folder): <input type="file" id="albumFiles" multiple webkitdirectory></label><br>
+<button id="uploadAlbum">Upload Album</button>
 
-<p>Instructions: After downloading the JSON, upload it to <code>/gallery-data/</code> and your images to <code>/images/uploads/</code>.</p>
+<h2>Existing Albums</h2>
+<div id="existingAlbums"></div>
 
-<script src="js/admin.js"></script>
-</body>
-</html>
+<script src="admin.js"></script>
