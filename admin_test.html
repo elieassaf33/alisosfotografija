@@ -1,21 +1,27 @@
-<!-- admin-upload.html -->
 <!doctype html>
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>Admin Upload to Git</title>
-  <style>body{font-family:sans-serif;max-width:800px;margin:2rem;} .preview img{max-width:150px;margin:6px}</style>
+  <title>Photo Admin Panel</title>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 2rem; }
+    .preview img { max-width: 120px; margin: 6px; border: 1px solid #ccc; padding: 2px; }
+    .album { margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+    button { margin-left: 5px; }
+  </style>
 </head>
 <body>
-  <h2>Upload images to repo (static)</h2>
+  <h2>Photo Admin Panel</h2>
 
-  <label>Path prefix (inside repo) e.g. static/images/posts</label><br/>
-  <input id="pathPrefix" type="text" value="static/images" style="width:60%"/>
+  <h3>Create / Select Album</h3>
+  <input id="albumName" type="text" placeholder="Album name e.g. photoshoot1" style="width:50%"/>
+  <button id="loadAlbumBtn">Load Album</button>
+  <div id="currentAlbum">Current Album: <strong>None</strong></div>
 
+  <h3>Upload Photos / Folder</h3>
+  <input id="files" type="file" multiple webkitdirectory/>
   <br/><br/>
-  <input id="files" type="file" multiple accept="image/*"/>
-  <br/><br/>
-  <input id="commitMsg" type="text" placeholder="Commit message" style="width:60%" value="Add images via admin"/>
+  <input id="commitMsg" type="text" placeholder="Commit message" style="width:60%" value="Upload photos"/>
   <br/><br/>
   <button id="uploadBtn">Upload & Commit</button>
 
@@ -25,54 +31,87 @@
   <h3>Preview</h3>
   <div id="preview" class="preview"></div>
 
+  <h3>Existing Photos</h3>
+  <div id="existingPhotos"></div>
+
 <script>
-document.getElementById('files').addEventListener('change', (e) => {
-  const p = document.getElementById('preview');
-  p.innerHTML = '';
-  for (const file of e.target.files) {
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(file);
-    p.appendChild(img);
+// ===== Helpers =====
+const readFileAsBase64 = file => new Promise((res, rej) => {
+  const reader = new FileReader();
+  reader.onload = () => res({ name: file.webkitRelativePath || file.name, contentBase64: reader.result.split(',')[1] });
+  reader.onerror = rej;
+  reader.readAsDataURL(file);
+});
+
+let currentAlbum = null;
+
+// ===== Load existing album =====
+document.getElementById('loadAlbumBtn').addEventListener('click', async () => {
+  const album = document.getElementById('albumName').value.trim();
+  if (!album) return alert('Enter album name');
+  currentAlbum = album;
+  document.getElementById('currentAlbum').innerHTML = `Current Album: <strong>${album}</strong>`;
+  document.getElementById('existingPhotos').innerHTML = 'Loading...';
+
+  try {
+    const resp = await fetch(`https://api.github.com/repos/elieassaf33/alisosfotografija/contents/static/images/${album}`);
+    const files = await resp.json();
+    const container = document.getElementById('existingPhotos');
+    container.innerHTML = '';
+    if (!Array.isArray(files)) return container.innerHTML = 'No files yet';
+    files.forEach(file => {
+      const div = document.createElement('div');
+      div.style.display='inline-block';
+      div.style.margin='5px';
+      const img = document.createElement('img');
+      img.src = `https://raw.githubusercontent.com/elieassaf33/alisosfotografija/main/${file.path}`;
+      img.style.maxWidth='100px';
+      div.appendChild(img);
+      const btn = document.createElement('button');
+      btn.textContent = 'Delete Photo';
+      btn.onclick = () => deletePhoto(file.path, file.sha);
+      div.appendChild(btn);
+      container.appendChild(div);
+    });
+    // Add delete album button
+    const delAlbumBtn = document.createElement('button');
+    delAlbumBtn.textContent = 'Delete Entire Album';
+    delAlbumBtn.onclick = () => deleteAlbum(`static/images/${album}`);
+    container.appendChild(document.createElement('br'));
+    container.appendChild(delAlbumBtn);
+  } catch (err) {
+    document.getElementById('existingPhotos').innerHTML = 'Error loading album';
+    console.error(err);
   }
 });
 
+// ===== Upload files =====
 document.getElementById('uploadBtn').addEventListener('click', async () => {
   const files = document.getElementById('files').files;
-  if (!files.length) return alert('Choose files first');
-  const pathPrefix = document.getElementById('pathPrefix').value || 'static/images';
-  const commitMsg = document.getElementById('commitMsg').value || 'Add images via admin';
+  if (!files.length) return alert('Select files or folder first');
+  if (!currentAlbum) return alert('Load or enter album first');
 
+  const commitMsg = document.getElementById('commitMsg').value || 'Upload photos';
   const statusEl = document.getElementById('status');
   statusEl.innerHTML = 'Reading files...';
-
-  // read files as base64
-  const readFileAsBase64 = (file) => new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      // reader.result is "data:<mime>;base64,AAAA..."
-      const base64 = reader.result.split(',')[1];
-      res({ name: file.name, contentBase64: base64 });
-    };
-    reader.onerror = rej;
-    reader.readAsDataURL(file);
-  });
 
   const toUpload = [];
   for (const f of files) {
     statusEl.innerHTML = `Reading ${f.name}...`;
     const obj = await readFileAsBase64(f);
+    // prepend album folder
+    obj.name = `${currentAlbum}/${obj.name.split('/').pop()}`;
     toUpload.push(obj);
   }
 
   statusEl.innerHTML = `Uploading ${toUpload.length} file(s)...`;
 
-  // send to serverless function
   try {
     const resp = await fetch('/.netlify/functions/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        pathPrefix,
+        pathPrefix: 'static/images',
         commitMessage: commitMsg,
         files: toUpload
       })
@@ -84,10 +123,57 @@ document.getElementById('uploadBtn').addEventListener('click', async () => {
     }
     const lines = json.results.map(r => r.ok ? `✔ ${r.name} -> ${r.path}` : `✖ ${r.name} : ${JSON.stringify(r.error)}`);
     statusEl.innerHTML = '<pre>' + lines.join('\n') + '</pre>';
+    // reload album after upload
+    document.getElementById('loadAlbumBtn').click();
   } catch (err) {
     statusEl.innerHTML = 'Error: ' + err.message;
   }
 });
+
+// ===== Delete individual photo =====
+async function deletePhoto(path, sha) {
+  if (!confirm(`Delete photo ${path}?`)) return;
+  const statusEl = document.getElementById('status');
+  statusEl.innerHTML = `Deleting ${path}...`;
+  try {
+    const resp = await fetch('/.netlify/functions/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, sha, commitMessage: `Delete ${path}` })
+    });
+    const json = await resp.json();
+    if (json.ok) {
+      statusEl.innerHTML = `Deleted ${path}`;
+      document.getElementById('loadAlbumBtn').click();
+    } else {
+      statusEl.innerHTML = `Failed to delete ${path}`;
+      console.error(json);
+    }
+  } catch (err) {
+    statusEl.innerHTML = `Error deleting ${path}: ${err.message}`;
+  }
+}
+
+// ===== Delete entire album =====
+async function deleteAlbum(albumPath) {
+  if (!confirm(`Delete entire album ${albumPath}? This cannot be undone.`)) return;
+  const statusEl = document.getElementById('status');
+  statusEl.innerHTML = `Deleting album ${albumPath}...`;
+  try {
+    // list all files
+    const resp = await fetch(`https://api.github.com/repos/elieassaf33/alisosfotografija/contents/${albumPath}`);
+    const files = await resp.json();
+    for (const file of files) {
+      await deletePhoto(file.path, file.sha);
+    }
+    statusEl.innerHTML = `Album ${albumPath} deleted`;
+    currentAlbum = null;
+    document.getElementById('currentAlbum').innerHTML = `Current Album: <strong>None</strong>`;
+    document.getElementById('existingPhotos').innerHTML = '';
+  } catch (err) {
+    statusEl.innerHTML = `Error deleting album: ${err.message}`;
+  }
+}
 </script>
 </body>
 </html>
