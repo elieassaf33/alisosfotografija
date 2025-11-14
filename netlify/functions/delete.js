@@ -1,61 +1,33 @@
 // netlify/functions/delete.js
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
-  }
-
-  const { path, sha, commitMessage = "Delete file" } = JSON.parse(req.body);
-  const token = process.env.GITHUB_TOKEN;
-  const repo = process.env.GITHUB_REPO;
-  const branch = process.env.GITHUB_BRANCH || "main";
-
-  if (!path || !sha) {
-    return res.status(400).json({ error: "Missing path or sha" });
-  }
-
-  const apiUrl = `https://api.github.com/repos/${repo}/contents/${encodeURIComponent(path)}`;
-
+// netlify/functions/delete.js
+exports.handler = async (event) => {
   try {
+    const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+    const { path, sha, commitMessage = 'Delete file' } = body;
+    if (!path || !sha) return { statusCode: 400, body: 'Missing path or sha' };
+
+    const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${encodeURIComponent(path)}`;
+
     const resp = await fetch(apiUrl, {
-      method: "DELETE",
+      method: 'DELETE',
       headers: {
-        Authorization: `token ${token}`,
-        "Content-Type": "application/json",
+        Authorization: `token ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         message: commitMessage,
         sha,
-        branch,
+        branch: GITHUB_BRANCH
       }),
     });
-    const data = await resp.json();
-    if (resp.status >= 200 && resp.status < 300) {
-      return res.status(200).json({ ok: true, data });
+
+    const json = await resp.json();
+    if(resp.status === 200 || resp.status === 204){
+      return { statusCode: 200, body: JSON.stringify({ ok: true }) };
     } else {
-      return res.status(resp.status).json({ ok: false, data });
+      return { statusCode: 500, body: JSON.stringify({ ok: false, error: json }) };
     }
   } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message });
+    return { statusCode: 500, body: JSON.stringify({ ok: false, error: err.message }) };
   }
-}
-async function deleteAlbum(pathPrefix) {
-  const token = YOUR_TOKEN;
-  const repo = YOUR_REPO;
-  const branch = YOUR_BRANCH || "main";
-
-  // 1. List files in the folder
-  const listResp = await fetch(
-    `https://api.github.com/repos/${repo}/contents/${pathPrefix}?ref=${branch}`,
-    { headers: { Authorization: `token ${token}` } }
-  );
-  const files = await listResp.json();
-
-  // 2. Delete each file
-  for (const file of files) {
-    await fetch(`/.netlify/functions/delete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: file.path, sha: file.sha, commitMessage: `Delete ${file.name}` })
-    });
-  }
-}
+};
