@@ -5,7 +5,7 @@
   <title>Photo Admin Panel</title>
   <style>
     body { font-family: sans-serif; max-width: 900px; margin: 2rem; }
-    .preview img { max-width: 120px; margin: 6px; border: 1px solid #ccc; padding: 2px; }
+    .preview img, .existing img { max-width: 120px; margin: 6px; border: 1px solid #ccc; padding: 2px; }
     .album { margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
     button { margin-left: 5px; }
   </style>
@@ -13,11 +13,22 @@
 <body>
   <h2>Photo Admin Panel</h2>
 
+  <!-- Theme selection -->
+  <h3>Select Theme</h3>
+  <select id="themeSelect">
+    <option value="studio">Studio</option>
+    <option value="portrait">Portrait</option>
+    <option value="events">Events</option>
+    <option value="family">Family</option>
+  </select>
+
+  <!-- Album selection / creation -->
   <h3>Create / Select Album</h3>
   <input id="albumName" type="text" placeholder="Album name e.g. photoshoot1" style="width:50%"/>
   <button id="loadAlbumBtn">Load Album</button>
   <div id="currentAlbum">Current Album: <strong>None</strong></div>
 
+  <!-- Upload -->
   <h3>Upload Photos / Folder</h3>
   <input id="files" type="file" multiple webkitdirectory/>
   <br/><br/>
@@ -32,7 +43,7 @@
   <div id="preview" class="preview"></div>
 
   <h3>Existing Photos</h3>
-  <div id="existingPhotos"></div>
+  <div id="existingPhotos" class="existing"></div>
 
 <script>
 // ===== Helpers =====
@@ -50,11 +61,13 @@ document.getElementById('loadAlbumBtn').addEventListener('click', async () => {
   const album = document.getElementById('albumName').value.trim();
   if (!album) return alert('Enter album name');
   currentAlbum = album;
-  document.getElementById('currentAlbum').innerHTML = `Current Album: <strong>${album}</strong>`;
+  const theme = document.getElementById('themeSelect').value;
+  document.getElementById('currentAlbum').innerHTML = `Current Album: <strong>${theme}/${album}</strong>`;
   document.getElementById('existingPhotos').innerHTML = 'Loading...';
 
   try {
-    const resp = await fetch(`https://api.github.com/repos/elieassaf33/alisosfotografija/contents/static/images/${album}`);
+    const albumPath = `static/images/${theme}/${album}`;
+    const resp = await fetch(`https://api.github.com/repos/elieassaf33/alisosfotografija/contents/${albumPath}`);
     const files = await resp.json();
     const container = document.getElementById('existingPhotos');
     container.innerHTML = '';
@@ -65,7 +78,6 @@ document.getElementById('loadAlbumBtn').addEventListener('click', async () => {
       div.style.margin='5px';
       const img = document.createElement('img');
       img.src = `https://raw.githubusercontent.com/elieassaf33/alisosfotografija/main/${file.path}`;
-      img.style.maxWidth='100px';
       div.appendChild(img);
       const btn = document.createElement('button');
       btn.textContent = 'Delete Photo';
@@ -73,10 +85,10 @@ document.getElementById('loadAlbumBtn').addEventListener('click', async () => {
       div.appendChild(btn);
       container.appendChild(div);
     });
-    // Add delete album button
+    // Delete album button
     const delAlbumBtn = document.createElement('button');
     delAlbumBtn.textContent = 'Delete Entire Album';
-    delAlbumBtn.onclick = () => deleteAlbum(`static/images/${album}`);
+    delAlbumBtn.onclick = () => deleteAlbum(albumPath);
     container.appendChild(document.createElement('br'));
     container.appendChild(delAlbumBtn);
   } catch (err) {
@@ -90,6 +102,7 @@ document.getElementById('uploadBtn').addEventListener('click', async () => {
   const files = document.getElementById('files').files;
   if (!files.length) return alert('Select files or folder first');
   if (!currentAlbum) return alert('Load or enter album first');
+  const theme = document.getElementById('themeSelect').value;
 
   const commitMsg = document.getElementById('commitMsg').value || 'Upload photos';
   const statusEl = document.getElementById('status');
@@ -99,8 +112,7 @@ document.getElementById('uploadBtn').addEventListener('click', async () => {
   for (const f of files) {
     statusEl.innerHTML = `Reading ${f.name}...`;
     const obj = await readFileAsBase64(f);
-    // prepend album folder
-    obj.name = `${currentAlbum}/${obj.name.split('/').pop()}`;
+    obj.name = `${theme}/${currentAlbum}/${obj.name.split('/').pop()}`;
     toUpload.push(obj);
   }
 
@@ -160,7 +172,6 @@ async function deleteAlbum(albumPath) {
   const statusEl = document.getElementById('status');
   statusEl.innerHTML = `Deleting album ${albumPath}...`;
   try {
-    // list all files
     const resp = await fetch(`https://api.github.com/repos/elieassaf33/alisosfotografija/contents/${albumPath}`);
     const files = await resp.json();
     for (const file of files) {
