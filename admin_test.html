@@ -2,185 +2,234 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Admin Photo Panel</title>
+<title>Alisos Fotografija Adminas</title>
 <style>
-body { font-family: Arial, sans-serif; background:#f4f4f4; margin:0; padding:2rem; }
-h2,h3,h4 { color:#333; }
-.container { max-width: 1000px; margin:auto; }
-input, select, button { padding:8px; margin:5px 0; font-size:1rem; }
-button { cursor:pointer; border:none; border-radius:4px; background:#007BFF; color:white; transition:0.2s; }
-button:hover { background:#0056b3; }
-#dropArea { border:2px dashed #aaa; border-radius:6px; padding:30px; text-align:center; margin-bottom:20px; background:white; transition:0.2s; }
-#dropArea.dragover { border-color:#007BFF; background:#e0f0ff; }
-.existingPhotos { display:grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap:10px; margin-bottom:1rem; }
-.card { background:white; padding:5px; border-radius:6px; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:relative; overflow:hidden; }
-.card img { width:100%; height:100px; object-fit:cover; border-radius:4px; }
-.card button { position:absolute; top:5px; right:5px; background:red; font-size:0.8rem; padding:3px 6px; border-radius:4px; color:white; cursor:pointer; opacity:0.8; transition:0.2s; }
-.card button:hover { opacity:1; }
-.status { margin-top:10px; font-weight:bold; }
-.album { background:#fff; padding:10px; border-radius:6px; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:2rem; }
+  body { font-family: 'ubuntu light', sans-serif, Arial; background:#f6f4f1; margin:0; padding:2rem; color:#333; }
+  h1 { text-align:center; margin-bottom:2rem; }
+  .album { background:white; padding:1rem; margin-bottom:2rem; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .album h2 { margin-top:0; }
+  .controls { margin-bottom:1rem; display:flex; gap:0.5rem; flex-wrap:wrap; }
+  .controls button { padding:0.5rem 1rem; cursor:pointer; border:none; border-radius:6px; background:#555; color:white; transition:0.2s; }
+  .controls button:hover { background:#222; }
+  input[type="file"] { border-radius:6px; padding:0.3rem; }
+  .images { display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
+  .image-item { position:relative; border-radius:6px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,0.1); }
+  .image-item img { width:100%; display:block; object-fit:cover; height:100px; }
+  .image-item button { position:absolute; top:5px; right:5px; background:red; border:none; color:white; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:12px; }
+  .status { margin-top:0.5rem; color:green; }
+  .error { color:red; }
 </style>
 </head>
 <body>
-<div class="container">
-<h2>Admin Photo Panel</h2>
 
-<h3>Select Theme</h3>
-<select id="themeSelect">
-  <option value="studio">Studio</option>
-  <option value="portrait">Portrait</option>
-  <option value="events">Events</option>
-  <option value="family">Family</option>
-</select>
+<h1>Alisos Fotografija Adminas</h1>
 
-<h3>Album Options</h3>
-<input id="albumName" type="text" placeholder="Album name (optional)"/>
-<button id="loadAlbumBtn">Load Specific Album</button>
-<button id="loadAllAlbumsBtn">Load All Albums for Theme</button>
-
-<h3>Upload Photos</h3>
-<div id="dropArea">Drag & Drop files/folder here or click to select</div>
-<input id="files" type="file" multiple webkitdirectory style="display:none;"/>
-<button id="uploadBtn">Upload to Selected Album</button>
-
-<div id="status" class="status"></div>
 <div id="albumsContainer"></div>
-</div>
 
 <script>
-let currentAlbum = null;
-let selectedFiles = [];
+const ADMIN_PASSWORD = "ALISIJA004";
+const IMAGE_FOLDER = "static/images";
+const ALBUMS = ["Events", "Studio", "Portrait", "Family"];
 
-// ===== Drag & Drop =====
-const dropArea = document.getElementById('dropArea');
-const fileInput = document.getElementById('files');
-dropArea.addEventListener('click', ()=>fileInput.click());
-dropArea.addEventListener('dragover', e=>{e.preventDefault(); dropArea.classList.add('dragover');});
-dropArea.addEventListener('dragleave', e=>{e.preventDefault(); dropArea.classList.remove('dragover');});
-dropArea.addEventListener('drop', e=>{e.preventDefault(); dropArea.classList.remove('dragover'); selectedFiles = Array.from(e.dataTransfer.files); renderPreview();});
-fileInput.addEventListener('change', e=>{selectedFiles = Array.from(e.target.files); renderPreview();});
+async function getToken() {
+  const resp = await fetch("/.netlify/functions/getUploadToken", { headers: { "X-Admin-Pass": ADMIN_PASSWORD } });
+  const cfg = await resp.json();
+  if (!cfg.token) throw new Error("Unauthorized");
+  return cfg;
+}
 
-// ===== Preview =====
-function renderPreview(){
-  dropArea.innerHTML = selectedFiles.length ? '' : 'Drag & Drop files/folder here or click to select';
-  selectedFiles.forEach(f=>{
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(f);
-    img.style.width='80px'; img.style.height='80px'; img.style.objectFit='cover'; img.style.margin='4px';
-    dropArea.appendChild(img);
+function fileToBase64(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(",")[1]);
+    reader.readAsDataURL(file);
   });
 }
 
-// ===== Helpers =====
-const readFileAsBase64 = file => new Promise((res,rej)=>{
-  const reader = new FileReader();
-  reader.onload = ()=>res({name:file.webkitRelativePath||file.name, contentBase64:reader.result.split(',')[1]});
-  reader.onerror = rej;
-  reader.readAsDataURL(file);
-});
-
-function addPhotoCard(container, file, theme){
-  const div = document.createElement('div'); 
-  div.className='card'; div.dataset.path=file.path; div.dataset.sha=file.sha||'';
-  const img = document.createElement('img'); 
-  img.src=`https://raw.githubusercontent.com/elieassaf33/alisosfotografija/main/${file.path}`;
-  div.appendChild(img);
-  const btn = document.createElement('button'); 
-  btn.textContent='Delete';
-  btn.onclick=async()=>{
-    div.remove(); 
-    const albumDiv = div.closest('.album');
-    if(albumDiv && albumDiv.querySelectorAll('.card').length===0) albumDiv.remove();
-    try{ await fetch('/.netlify/functions/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:file.path,sha:file.sha,commitMessage:`Delete ${file.path}`})}); }catch(err){console.error(err);}
-  };
-  div.appendChild(btn);
-  container.appendChild(div);
+// -------------------------
+// Render albums
+// -------------------------
+function renderAlbums() {
+  const container = document.getElementById("albumsContainer");
+  container.innerHTML = "";
+  ALBUMS.forEach(album => {
+    const div = document.createElement("div");
+    div.className = "album";
+    div.id = `album-${album}`;
+    div.innerHTML = `
+      <h2>${album}</h2>
+      <div class="controls">
+        <input type="file" multiple id="fileInput-${album}" />
+        <button onclick="uploadAlbum('${album}')">Upload</button>
+        <button onclick="deleteAlbum('${album}')">Delete Whole Album</button>
+        <span class="status" id="status-${album}"></span>
+      </div>
+      <div class="images" id="images-${album}"></div>
+    `;
+    container.appendChild(div);
+    loadAlbumImages(album);
+  });
 }
 
-// ===== Load Albums =====
-async function loadAlbums(albums=[], theme){
-  const container = document.getElementById('albumsContainer');
-  container.innerHTML='';
-  for(const albumName of albums){
-    const albumDiv = document.createElement('div'); albumDiv.className='album';
-    const title = document.createElement('h4'); title.textContent=albumName; albumDiv.appendChild(title);
-    const photosGrid = document.createElement('div'); photosGrid.className='existingPhotos';
-    albumDiv.appendChild(photosGrid);
-    container.appendChild(albumDiv);
-
-    try{
-      const resp = await fetch('/.netlify/functions/list',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({theme, album:albumName})
+// -------------------------
+// Upload album
+// -------------------------
+async function uploadAlbum(album) {
+  const input = document.getElementById(`fileInput-${album}`);
+  const files = Array.from(input.files);
+  if (!files.length) return alert("Select files first!");
+  const status = document.getElementById(`status-${album}`);
+  status.innerText = "Uploading...";
+  try {
+    const { token, repo, branch } = await getToken();
+    for (let file of files) {
+      const base64 = await fileToBase64(file);
+      const path = `${IMAGE_FOLDER}/${album}/${encodeURIComponent(file.name)}`;
+      
+      // Check SHA
+      let sha;
+      const checkResp = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`, {
+        headers: { Authorization: `token ${token}`, "User-Agent": "AdminPanel" }
       });
-      const json = await resp.json();
-      if(json.ok && Array.isArray(json.files)){
-        json.files.forEach(f=>{
-          addPhotoCard(photosGrid,{path:f.path, sha:f.sha},theme);
-        });
-      }
-    }catch(err){console.error(err);}
-  }
-}
+      if (checkResp.status === 200) sha = (await checkResp.json()).sha;
 
-// ===== Buttons =====
-document.getElementById('loadAlbumBtn').addEventListener('click', async ()=>{
-  const albumName = document.getElementById('albumName').value.trim();
-  if(!albumName) return alert('Enter album name');
-  currentAlbum = albumName;
-  const theme = document.getElementById('themeSelect').value;
-  await loadAlbums([albumName], theme);
-});
-
-document.getElementById('loadAllAlbumsBtn').addEventListener('click', async ()=>{
-  const theme = document.getElementById('themeSelect').value;
-  try{
-    const resp = await fetch('/.netlify/functions/list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({theme})});
-    const json = await resp.json();
-    if(json.ok && Array.isArray(json.files)){
-      const albums = json.files.filter(f=>f.type==='dir').map(f=>f.name);
-      await loadAlbums(albums, theme);
+      // Upload
+      const uploadResp = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+        method:"PUT",
+        headers:{ Authorization: `token ${token}`, "User-Agent":"AdminPanel", "Content-Type":"application/json" },
+        body: JSON.stringify({ message:`Upload ${file.name}`, content:base64, branch, sha })
+      });
+      const result = await uploadResp.json();
+      if (uploadResp.status!==201 && uploadResp.status!==200) console.error(result);
     }
-  }catch(err){console.error(err);}
-});
-
-// ===== Upload =====
-document.getElementById('uploadBtn').addEventListener('click', async ()=>{
-  if(!selectedFiles.length) return alert('Select files first');
-  if(!currentAlbum) return alert('Load an album first');
-  const theme = document.getElementById('themeSelect').value;
-  const commitMsg = `Upload photos to ${currentAlbum}`;
-  const statusEl = document.getElementById('status'); statusEl.textContent='Uploading...';
-
-  for(const f of selectedFiles){
-    const obj = await readFileAsBase64(f);
-    const cleanName = obj.name.split('/').pop();
-    obj.name = `${theme}/${currentAlbum}/${cleanName}`;
-
-    try{
-      const resp = await fetch('/.netlify/functions/upload',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({pathPrefix:'static/images', commitMessage: commitMsg, files:[{name:obj.name, contentBase64:obj.contentBase64}]})
-      });
-      const json = await resp.json();
-      if(json.ok && json.results[0].ok){
-        statusEl.textContent=`Uploaded ${obj.name} ✅`;
-        // Add immediately to album
-        const albumsDiv = document.getElementById('albumsContainer').getElementsByClassName('album');
-        for(const albumDiv of albumsDiv){
-          if(albumDiv.querySelector('h4').textContent===currentAlbum){
-            addPhotoCard(albumDiv.querySelector('.existingPhotos'),{path:`static/images/${obj.name}`, sha:json.results[0].commit}, theme);
-            break;
-          }
-        }
-      } else { console.error(json); statusEl.textContent=`Failed to upload ${obj.name} ❌`; }
-    }catch(err){ console.error(err); statusEl.textContent=`Error uploading ${obj.name} ❌`; }
+    status.innerText = "Upload complete!";
+    loadAlbumImages(album);
+  } catch(err) {
+    status.innerText = "Error: " + err.message;
+    status.classList.add("error");
   }
-  selectedFiles=[];
-  renderPreview();
-});
+}
+
+// -------------------------
+// Load album images
+// -------------------------
+async function loadAlbumImages(album) {
+  const imagesDiv = document.getElementById(`images-${album}`);
+  imagesDiv.innerHTML = "Loading...";
+  try {
+    const { token, repo, branch } = await getToken();
+    const resp = await fetch(`https://api.github.com/repos/${repo}/contents/${IMAGE_FOLDER}/${album}?ref=${branch}`, {
+      headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel" }
+    });
+    const files = await resp.json();
+    imagesDiv.innerHTML = "";
+    if (!Array.isArray(files) || !files.length) {
+      imagesDiv.innerHTML = "<em>No images uploaded yet.</em>";
+      return;
+    }
+    files.forEach(file => {
+      const div = document.createElement("div");
+      div.className = "image-item";
+      div.innerHTML = `<img src="${file.download_url}" alt="${file.name}" />
+                       <button onclick='deleteImage("${file.path}","${album}")'>×</button>`;
+      imagesDiv.appendChild(div);
+    });
+  } catch(err) {
+    imagesDiv.innerText = "Error loading images: "+err.message;
+  }
+}
+
+// -------------------------
+// Delete single image
+// -------------------------
+// -----------------------------
+// Delete single image
+// -----------------------------
+async function deleteImage(path, album) {
+  if (!confirm("Delete this image?")) return;
+
+  const status = document.getElementById(`status-${album}`);
+  status.innerText = "Deleting...";
+  try {
+    const { token, repo, branch } = await getToken();
+
+    // Optimistically remove from UI
+    const imgDiv = document.querySelector(`.image-item[data-path='${path}']`);
+    if (imgDiv) imgDiv.remove();
+
+    // Get SHA from GitHub
+    const shaResp = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`, {
+      headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel" }
+    });
+    const sha = (await shaResp.json()).sha;
+
+    // Delete file
+    await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+      method: "DELETE",
+      headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel", "Content-Type":"application/json" },
+      body: JSON.stringify({ message:`Delete ${path}`, branch, sha })
+    });
+
+    // Wait a moment for GitHub to process
+    await new Promise(r => setTimeout(r, 500));
+    status.innerText = "Deleted!";
+    loadAlbumImages(album); // refresh to ensure sync
+  } catch(err) {
+    status.innerText = "Error: " + err.message;
+    status.classList.add("error");
+  }
+}
+
+// -----------------------------
+// Delete whole album
+// -----------------------------
+async function deleteAlbum(album) {
+  if (!confirm(`Delete ALL images in ${album}?`)) return;
+
+  const status = document.getElementById(`status-${album}`);
+  status.innerText = "Deleting album...";
+  try {
+    const { token, repo, branch } = await getToken();
+
+    // Load album files
+    const resp = await fetch(`https://api.github.com/repos/${repo}/contents/${IMAGE_FOLDER}/${album}?ref=${branch}`, {
+      headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel" }
+    });
+    const files = await resp.json();
+    if (!Array.isArray(files) || !files.length) {
+      status.innerText = "Album is already empty";
+      return;
+    }
+
+    // Optimistically clear UI
+    const imagesDiv = document.getElementById(`images-${album}`);
+    imagesDiv.innerHTML = "";
+
+    // Delete each file with a short delay to avoid API issues
+    for (let file of files) {
+      await fetch(`https://api.github.com/repos/${repo}/contents/${file.path}`, {
+        method: "DELETE",
+        headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel", "Content-Type":"application/json" },
+        body: JSON.stringify({ message:`Delete ${file.path}`, branch, sha:file.sha })
+      });
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    // Wait a bit to ensure GitHub processed
+    await new Promise(r => setTimeout(r, 500));
+    status.innerText = "Album deleted!";
+    loadAlbumImages(album); // refresh
+  } catch(err) {
+    status.innerText = "Error: " + err.message;
+    status.classList.add("error");
+  }
+}
+
+
+
+// Initial render
+renderAlbums();
+
 </script>
 </body>
 </html>
