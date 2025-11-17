@@ -3,7 +3,8 @@
     "@dataconnect/generated": "file:src/dataconnect-generated",
     "@emailjs/browser": "^4.4.1",
     "firebase": "^12.5.0",
-    "formidable-serverless": "^1.1.1"
+    "formidable-serverless": "^1.1.1",
+    "node-fetch": "^2.7.0"
   },
   "name": "test",
   "version": "1.0.0",
