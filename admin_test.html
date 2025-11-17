@@ -2,16 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Alisos Fotografija Admin</title>
+<title>Alisos Fotografija Adminas</title>
 <style>
   body { font-family: 'ubuntu light', sans-serif, Arial; background:#f6f4f1; margin:0; padding:2rem; color:#333; }
   h1 { text-align:center; margin-bottom:2rem; }
-  .login { max-width:400px; margin:2rem auto; background:white; padding:2rem; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-  .login input { width:100%; padding:0.5rem; margin-bottom:1rem; border-radius:5px; border:1px solid #ccc; }
-  .login button { width:100%; padding:0.7rem; border:none; background:#555; color:white; border-radius:5px; cursor:pointer; }
-  .login button:hover { background:#222; }
-  .error { color:red; text-align:center; margin-top:1rem; }
-  .album { display:none; background:white; padding:1rem; margin-bottom:2rem; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .album { background:white; padding:1rem; margin-bottom:2rem; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
   .album h2 { margin-top:0; }
   .controls { margin-bottom:1rem; display:flex; gap:0.5rem; flex-wrap:wrap; }
   .controls button { padding:0.5rem 1rem; cursor:pointer; border:none; border-radius:6px; background:#555; color:white; transition:0.2s; }
@@ -22,58 +17,34 @@
   .image-item img { width:100%; display:block; object-fit:cover; height:100px; }
   .image-item button { position:absolute; top:5px; right:5px; background:red; border:none; color:white; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:12px; }
   .status { margin-top:0.5rem; color:green; }
+  .error { color:red; }
 </style>
 </head>
 <body>
 
-<h1>Alisos Fotografija Admin</h1>
-
-<div class="login" id="loginDiv">
-  <input type="password" id="adminPassword" placeholder="Enter admin password">
-  <button id="loginBtn">Login</button>
-  <div class="error" id="loginError"></div>
-</div>
+<h1>Alisos Fotografija Adminas</h1>
 
 <div id="albumsContainer"></div>
 
 <script>
+const ADMIN_PASSWORD = "ALISIJA004";
+const IMAGE_FOLDER = "static/images";
 const ALBUMS = ["Events", "Studio", "Portrait", "Family"];
-let githubToken = null;
 
-// -------------------------
-// Login
-// -------------------------
-document.getElementById("loginBtn").addEventListener("click", async () => {
-  const password = document.getElementById("adminPassword").value;
-  const errorDiv = document.getElementById("loginError");
-  errorDiv.innerText = "";
+async function getToken() {
+  const resp = await fetch("/.netlify/functions/getUploadToken", { headers: { "X-Admin-Pass": ADMIN_PASSWORD } });
+  const cfg = await resp.json();
+  if (!cfg.token) throw new Error("Unauthorized");
+  return cfg;
+}
 
-  if (!password) { errorDiv.innerText = "Enter password"; return; }
-
-  try {
-    // Call Netlify function to validate password
-    const resp = await fetch("/.netlify/functions/getUploadToken", {
-      method: "POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ password })
-    });
-
-    const data = await resp.json();
-    if (!data.token) { 
-      errorDiv.innerText = "Wrong password!";
-      return;
-    }
-
-    githubToken = data.token;
-    document.getElementById("loginDiv").style.display = "none";
-
-    renderAlbums();
-
-  } catch(err) {
-    console.error(err);
-    errorDiv.innerText = "Login failed. Try again.";
-  }
-});
+function fileToBase64(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(",")[1]);
+    reader.readAsDataURL(file);
+  });
+}
 
 // -------------------------
 // Render albums
@@ -85,7 +56,6 @@ function renderAlbums() {
     const div = document.createElement("div");
     div.className = "album";
     div.id = `album-${album}`;
-    div.style.display = "block"; // show after login
     div.innerHTML = `
       <h2>${album}</h2>
       <div class="controls">
@@ -102,25 +72,164 @@ function renderAlbums() {
 }
 
 // -------------------------
-// Utility
+// Upload album
 // -------------------------
-function fileToBase64(file) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result.split(",")[1]);
-    reader.readAsDataURL(file);
-  });
+async function uploadAlbum(album) {
+  const input = document.getElementById(`fileInput-${album}`);
+  const files = Array.from(input.files);
+  if (!files.length) return alert("Select files first!");
+  const status = document.getElementById(`status-${album}`);
+  status.innerText = "Uploading...";
+  try {
+    const { token, repo, branch } = await getToken();
+    for (let file of files) {
+      const base64 = await fileToBase64(file);
+      const path = `${IMAGE_FOLDER}/${album}/${encodeURIComponent(file.name)}`;
+      
+      // Check SHA
+      let sha;
+      const checkResp = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`, {
+        headers: { Authorization: `token ${token}`, "User-Agent": "AdminPanel" }
+      });
+      if (checkResp.status === 200) sha = (await checkResp.json()).sha;
+
+      // Upload
+      const uploadResp = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+        method:"PUT",
+        headers:{ Authorization: `token ${token}`, "User-Agent":"AdminPanel", "Content-Type":"application/json" },
+        body: JSON.stringify({ message:`Upload ${file.name}`, content:base64, branch, sha })
+      });
+      const result = await uploadResp.json();
+      if (uploadResp.status!==201 && uploadResp.status!==200) console.error(result);
+    }
+    status.innerText = "Upload complete!";
+    loadAlbumImages(album);
+  } catch(err) {
+    status.innerText = "Error: " + err.message;
+    status.classList.add("error");
+  }
 }
 
 // -------------------------
-// Upload & Load & Delete
+// Load album images
 // -------------------------
-// Use the githubToken from login for all API calls
-// The uploadAlbum, loadAlbumImages, deleteImage, deleteAlbum
-// functions can be mostly the same as your previous code
-// just use githubToken for Authorization header
+async function loadAlbumImages(album) {
+  const imagesDiv = document.getElementById(`images-${album}`);
+  imagesDiv.innerHTML = "Loading...";
+  try {
+    const { token, repo, branch } = await getToken();
+    const resp = await fetch(`https://api.github.com/repos/${repo}/contents/${IMAGE_FOLDER}/${album}?ref=${branch}`, {
+      headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel" }
+    });
+    const files = await resp.json();
+    imagesDiv.innerHTML = "";
+    if (!Array.isArray(files) || !files.length) {
+      imagesDiv.innerHTML = "<em>No images uploaded yet.</em>";
+      return;
+    }
+    files.forEach(file => {
+      const div = document.createElement("div");
+      div.className = "image-item";
+      div.innerHTML = `<img src="${file.download_url}" alt="${file.name}" />
+                       <button onclick='deleteImage("${file.path}","${album}")'>×</button>`;
+      imagesDiv.appendChild(div);
+    });
+  } catch(err) {
+    imagesDiv.innerText = "Error loading images: "+err.message;
+  }
+}
+
+// -------------------------
+// Delete single image
+// -------------------------
+// -----------------------------
+// Delete single image
+// -----------------------------
+async function deleteImage(path, album) {
+  if (!confirm("Delete this image?")) return;
+
+  const status = document.getElementById(`status-${album}`);
+  status.innerText = "Deleting...";
+  try {
+    const { token, repo, branch } = await getToken();
+
+    // Optimistically remove from UI
+    const imgDiv = document.querySelector(`.image-item[data-path='${path}']`);
+    if (imgDiv) imgDiv.remove();
+
+    // Get SHA from GitHub
+    const shaResp = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`, {
+      headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel" }
+    });
+    const sha = (await shaResp.json()).sha;
+
+    // Delete file
+    await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+      method: "DELETE",
+      headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel", "Content-Type":"application/json" },
+      body: JSON.stringify({ message:`Delete ${path}`, branch, sha })
+    });
+
+    // Wait a moment for GitHub to process
+    await new Promise(r => setTimeout(r, 500));
+    status.innerText = "Deleted!";
+    loadAlbumImages(album); // refresh to ensure sync
+  } catch(err) {
+    status.innerText = "Error: " + err.message;
+    status.classList.add("error");
+  }
+}
+
+// -----------------------------
+// Delete whole album
+// -----------------------------
+async function deleteAlbum(album) {
+  if (!confirm(`Delete ALL images in ${album}?`)) return;
+
+  const status = document.getElementById(`status-${album}`);
+  status.innerText = "Deleting album...";
+  try {
+    const { token, repo, branch } = await getToken();
+
+    // Load album files
+    const resp = await fetch(`https://api.github.com/repos/${repo}/contents/${IMAGE_FOLDER}/${album}?ref=${branch}`, {
+      headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel" }
+    });
+    const files = await resp.json();
+    if (!Array.isArray(files) || !files.length) {
+      status.innerText = "Album is already empty";
+      return;
+    }
+
+    // Optimistically clear UI
+    const imagesDiv = document.getElementById(`images-${album}`);
+    imagesDiv.innerHTML = "";
+
+    // Delete each file with a short delay to avoid API issues
+    for (let file of files) {
+      await fetch(`https://api.github.com/repos/${repo}/contents/${file.path}`, {
+        method: "DELETE",
+        headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel", "Content-Type":"application/json" },
+        body: JSON.stringify({ message:`Delete ${file.path}`, branch, sha:file.sha })
+      });
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    // Wait a bit to ensure GitHub processed
+    await new Promise(r => setTimeout(r, 500));
+    status.innerText = "Album deleted!";
+    loadAlbumImages(album); // refresh
+  } catch(err) {
+    status.innerText = "Error: " + err.message;
+    status.classList.add("error");
+  }
+}
+
+
+
+// Initial render
+renderAlbums();
 
 </script>
-
 </body>
-</html>
+</html>'sorry this 
