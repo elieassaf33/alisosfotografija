@@ -1,209 +1,194 @@
 <!DOCTYPE html>
 <html lang="lt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vestuvių Fotografija</title>
-    <link rel="icon" type="image/x-icon" href="img/favicon.ico">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        .gallery-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vestuvių Fotografija</title>
+<link rel="icon" type="image/x-icon" href="img/favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* keep your current gallery styles */
+.photo-grid { display: grid; grid-auto-rows: 400px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; grid-auto-flow: dense; }
+.photo-item { position: relative; border-radius: 10px; overflow: hidden; height: 100%; width: 100%; cursor:pointer; }
+.image-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.gallery-image { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; transition: transform 0.3s; }
+.photo-item:hover .gallery-image { transform: scale(1.05); }
 
-        .section-title {
-            text-align: center;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .section-description {
-            text-align: center;
-            color: #666;
-            margin-bottom: 40px;
-            font-size: 1.2em;
-        }
-
-        .photo-grid {
-            display: grid;
-            grid-auto-rows: 400px;  
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));      /* height adjusts based on content */
-            gap: 15px;
-            grid-auto-flow: dense;       /* fills gaps automatically */
-        }
-
-        .photo-item {
-            position: relative;
-            border-radius: 10px;
-            overflow: hidden;
-            height: 100%;
-            width: 100%;
-            object-fit: cover;
-            background: transparent;
-        }
-
-        .image-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .gallery-image {
-            width:  100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center;
-            display: block;
-            background: transparent;
-        }
-
-        @media (max-width: 768px) {
-            .photo-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .photo-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+/* full-view overlay */
+.full-view { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); justify-content:center; align-items:center; z-index:9999; }
+.full-view img { max-width:90%; max-height:90%; border-radius:10px; }
+.full-view .close { position:absolute; top:20px; right:30px; font-size:2rem; color:white; text-decoration:none; }
+.arrow {
+    position: absolute;
+    top: 50%;
+    font-size: 3rem;
+    color: white;
+    text-decoration: none;
+    padding: 0 10px;
+    user-select: none;
+    transform: translateY(-50%);
+}
+.arrow.left { left: 20px; }
+.arrow.right { right: 20px; }
+</style>
 </head>
 <body>
-    <header>
-        <div class="header-content">
-            <img class="logo" src="logo.png" alt="Alisos Fotografija" style="height: 100px; width: auto;">
-            <button class="menu-toggle" aria-label="Perjungti meniu">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </button>
-            <nav class="nav-container">
-                <ul class="nav">
-                    <li><a href="index.html">Pradžia</a></li>
-                    <li class="portfolio-dropdown">
-                        <a href="portfolio.html">Portfolio</a>
-                        <div class="portfolio-dropdown-content">
-                            <a href="studio.html">Studija</a>
-                            <a href="portrait.html">Portretai</a>
-                            <a href="family.html">Šeima</a>
-                            <a href="events.html">Vestuvės</a>
-                        </div>       
-                    </li>
-                    <li><a href="prices.html">Kainos</a></li>
-                    <li><a href="about.html">Apie</a></li>
-                    <li><a href="reviews.html">Atsiliepimai</a></li>
-                    <li><a href="contacts.html">Kontaktai</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-    <main>
+
+<header>
+    <div class="header-content">
+        <img class="logo" src="logo.png" alt="Alisos Fotografija" style="height: 100px; width: auto;">
+        <button class="menu-toggle" aria-label="Perjungti meniu">
+            <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+        </button>
+        <nav class="nav-container">
+            <ul class="nav">
+                <li><a href="index.html">Pradžia</a></li>
+                <li class="portfolio-dropdown">
+                    <a href="portfolio.html">Portfolio</a>
+                    <div class="portfolio-dropdown-content">
+                        <a href="studio.html">Studija</a>
+                        <a href="portrait.html">Portretai</a>
+                        <a href="family.html">Šeima</a>
+                        <a href="events.html">Vestuvės</a>
+                    </div>
+                </li>
+                <li><a href="prices.html">Kainos</a></li>
+                <li><a href="about.html">Apie</a></li>
+                <li><a href="reviews.html">Atsiliepimai</a></li>
+                <li><a href="contacts.html">Kontaktai</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main>
         <div class="gallery-container">
             <h1 class="section-title">Vestuvių Fotografija</h1>
             <p class="section-description">Ypatingų progų fiksavimas</p>
-            
-            <div class="photo-grid" id="photoGrid">
-                <!-- Photos will be loaded here -->
-            </div>
+            <div class="photo-grid" id="photoGrid"></div>
         </div>
     </main>
-    <footer class="footer">
-        <p>&copy; Alisos Fotografija. Nuotraukų naudojimas galimas tik su autorės sutikumu.</p>
-        </footer>
-    <script src="js/scripts.js"></script>
-    <script src="js/lightbox.js"></script>
-    <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-// Initialize lightbox
-initializeLightbox();
+<footer class="footer">
+<p>&copy; Alisos Fotografija. Nuotraukų naudojimas galimas tik su autorės sutikimu.</p>
+</footer>
 
-// 🔹 Firebase config
-const firebaseConfig = {
-    apiKey: "AIzaSyC6P-2nngV7gL7f7UeJICkJ_uwOikFFK50",
-    authDomain: "alisos-fotografija.firebaseapp.com",
-    projectId: "alisos-fotografija",
-    storageBucket: "alisos-fotografija.appspot.com",
-    messagingSenderId: "394303533680",
-    appId: "1:394303533680:web:8839ce95758766463c7ab5",
-};
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
+<script type="module">
 const photoGrid = document.getElementById('photoGrid');
-const category = 'events'; // category for this page
 
-// 🔹 Render photo element
-function renderPhoto(data, index) {
-    const photoItem = document.createElement('div');
-    photoItem.className = 'photo-item';
-    photoItem.innerHTML = `
-        <div class="image-container">
-            <img src="${data.url}" alt="${data.caption}" class="gallery-image">
-        </div>
-    `;
-    const img = photoItem.querySelector('img');
+// Full-view elements
+const fullView = document.createElement('div');
+fullView.id = 'fullView';
+fullView.style.cssText = `
+  display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.9); justify-content:center; align-items:center;
+  z-index:9999; flex-direction:column;
+`;
+document.body.appendChild(fullView);
+
+const fullImg = document.createElement('img');
+fullImg.id = 'fullImg';
+fullImg.style.maxWidth = '90%';
+fullImg.style.maxHeight = '80%';
+fullView.appendChild(fullImg);
+
+// Close button
+const closeFull = document.createElement('a');
+closeFull.href = '#';
+closeFull.innerHTML = '&times;';
+closeFull.style.cssText = `
+  position:absolute; top:20px; right:30px; font-size:3rem; color:white; text-decoration:none;
+`;
+fullView.appendChild(closeFull);
+
+// Arrows
+const prevArrow = document.createElement('a');
+prevArrow.href = '#';
+prevArrow.innerHTML = '&#10094;';
+prevArrow.style.cssText = 'position:absolute; left:20px; top:50%; font-size:3rem; color:white; text-decoration:none; transform:translateY(-50%)';
+fullView.appendChild(prevArrow);
+
+const nextArrow = document.createElement('a');
+nextArrow.href = '#';
+nextArrow.innerHTML = '&#10095;';
+nextArrow.style.cssText = 'position:absolute; right:20px; top:50%; font-size:3rem; color:white; text-decoration:none; transform:translateY(-50%)';
+fullView.appendChild(nextArrow);
+
+const GITHUB_REPO = 'elieassaf33/alisosfotografija';
+const IMAGE_FOLDER = 'static/images/Events';
+const BRANCH = 'main';
+
+let images = [];
+let currentIndex = 0;
+
+function renderPhoto(file, index) {
+    const div = document.createElement('div');
+    div.className = 'photo-item';
+    div.innerHTML = `<div class="image-container"><img src="${file.download_url}" alt="${file.name}" class="gallery-image"></div>`;
+    
+    div.addEventListener('click', () => {
+        currentIndex = index;
+        fullImg.src = images[currentIndex].download_url;
+        fullView.style.display = 'flex';
+    });
+
+    const img = div.querySelector('img');
     img.addEventListener('load', () => {
         const aspectRatio = img.naturalWidth / img.naturalHeight;
-        if (aspectRatio > 1.2) {
-            photoItem.classList.add('horizontal');
-        } else {
-            photoItem.classList.add('vertical');
-        }
+        if(aspectRatio > 1.2) div.classList.add('horizontal');
+        else div.classList.add('vertical');
     });
-    
-    img.addEventListener('click', () => {
-        const index = Array.from(photoGrid.children).indexOf(photoItem);
-        if (index !== -1) {
-            showLightbox(index);
-        }
-    });
-    return photoItem;
+
+    return div;
 }
 
-// 🔹 Load cached photos first for instant display
-const cachedPhotos = JSON.parse(localStorage.getItem(`photos_${category}`) || '[]');
-cachedPhotos.forEach(p => photoGrid.appendChild(renderPhoto(p)));
-
-// 🔹 Firestore real-time updates
-const q = query(
-    collection(db, "photos"),
-    where("category", "==", category),
-    orderBy("createdAt", "desc")
-);
-
-// If you want real-time updates instead of one-time load, use onSnapshot
-onSnapshot(q, (snapshot) => {
-    const freshData = [];
-    const newImages = [];
-    photoGrid.innerHTML = ''; // clear grid
-
-    snapshot.forEach((doc, index) => {
-        const data = doc.data();
-        freshData.push(data);
-        newImages.push({ 
-            src: data.url, 
-            title: data.caption || '' 
-        });
-        photoGrid.appendChild(renderPhoto(data, index));
-    });
-
-    // Update the images array atomically
-    images = newImages;
-    
-    // Store the fresh data
-    localStorage.setItem(`photos_${category}`, JSON.stringify(freshData));
+closeFull.addEventListener('click', e => {
+    e.preventDefault();
+    fullView.style.display = 'none';
+    fullImg.src = '';
 });
 
+fullView.addEventListener('click', e => {
+    if(e.target === fullView) {
+        fullView.style.display = 'none';
+        fullImg.src = '';
+    }
+});
+
+prevArrow.addEventListener('click', e => {
+    e.preventDefault();
+    if(images.length === 0) return;
+    currentIndex = (currentIndex - 1 + images.length) % images.length;
+    fullImg.src = images[currentIndex].download_url;
+});
+
+nextArrow.addEventListener('click', e => {
+    e.preventDefault();
+    if(images.length === 0) return;
+    currentIndex = (currentIndex + 1) % images.length;
+    fullImg.src = images[currentIndex].download_url;
+});
+
+async function loadPhotos() {
+    try {
+        const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_FOLDER}?ref=${BRANCH}`);
+        if(!resp.ok) throw new Error(`Failed to fetch images: ${resp.status}`);
+        const files = await resp.json();
+        photoGrid.innerHTML = '';
+        images = files.filter(f => f.type === 'file');
+        images.forEach((file, idx) => {
+            photoGrid.appendChild(renderPhoto(file, idx));
+        });
+    } catch(err) {
+        console.error('Error loading photos:', err);
+        photoGrid.innerHTML = '<p>Could not load photos.</p>';
+    }
+}
+
+loadPhotos();
 </script>
 
 </body>
