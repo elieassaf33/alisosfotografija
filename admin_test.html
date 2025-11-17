@@ -39,6 +39,9 @@
 <script>
 const ALBUMS = ["Events", "Studio", "Portrait", "Family"];
 let githubToken = null;
+const GITHUB_REPO = "elieassaf33/alisosfotografija"; // replace if needed
+const GITHUB_BRANCH = "main";
+const IMAGE_FOLDER = "static/images";
 
 // -------------------------
 // Login
@@ -51,11 +54,9 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
   if (!password) { errorDiv.innerText = "Enter password"; return; }
 
   try {
-    // Call Netlify function to validate password
     const resp = await fetch("/.netlify/functions/getUploadToken", {
-      method: "POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ password })
+      method: "GET",
+      headers: { "X-Admin-Pass": password }
     });
 
     const data = await resp.json();
@@ -66,7 +67,6 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 
     githubToken = data.token;
     document.getElementById("loginDiv").style.display = "none";
-
     renderAlbums();
 
   } catch(err) {
@@ -102,7 +102,7 @@ function renderAlbums() {
 }
 
 // -------------------------
-// Utility
+// Convert file to Base64
 // -------------------------
 function fileToBase64(file) {
   return new Promise(resolve => {
@@ -113,13 +113,125 @@ function fileToBase64(file) {
 }
 
 // -------------------------
-// Upload & Load & Delete
+// Upload image
 // -------------------------
-// Use the githubToken from login for all API calls
-// The uploadAlbum, loadAlbumImages, deleteImage, deleteAlbum
-// functions can be mostly the same as your previous code
-// just use githubToken for Authorization header
+async function uploadAlbum(album) {
+  const input = document.getElementById(`fileInput-${album}`);
+  const files = Array.from(input.files);
+  if (!files.length) return alert("Select files first!");
+  const status = document.getElementById(`status-${album}`);
+  status.innerText = "Uploading...";
 
+  try {
+    for (let file of files) {
+      const base64 = await fileToBase64(file);
+      const path = `${IMAGE_FOLDER}/${album}/${encodeURIComponent(file.name)}`;
+      
+      // Get SHA if file exists
+      let sha;
+      const checkResp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`, {
+        headers: { Authorization: `token ${githubToken}` }
+      });
+      if (checkResp.status === 200) sha = (await checkResp.json()).sha;
+
+      // Upload / update
+      const uploadResp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`, {
+        method:"PUT",
+        headers:{ Authorization: `token ${githubToken}`, "Content-Type":"application/json" },
+        body: JSON.stringify({ message:`Upload ${file.name}`, content:base64, branch:GITHUB_BRANCH, sha })
+      });
+      if (![200,201].includes(uploadResp.status)) console.error(await uploadResp.json());
+    }
+    status.innerText = "Upload complete!";
+    input.value = "";
+    loadAlbumImages(album);
+  } catch(err) {
+    console.error(err);
+    status.innerText = "Upload failed: "+err.message;
+  }
+}
+
+// -------------------------
+// Load album images
+// -------------------------
+async function loadAlbumImages(album) {
+  const imagesDiv = document.getElementById(`images-${album}`);
+  imagesDiv.innerHTML = "Loading...";
+  try {
+    const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_FOLDER}/${album}?ref=${GITHUB_BRANCH}`, {
+      headers: { Authorization: `token ${githubToken}` }
+    });
+    const files = await resp.json();
+    imagesDiv.innerHTML = "";
+    if (!Array.isArray(files) || !files.length) {
+      imagesDiv.innerHTML = "<em>No images uploaded yet.</em>";
+      return;
+    }
+    files.forEach(file => {
+      const div = document.createElement("div");
+      div.className = "image-item";
+      div.innerHTML = `<img src="${file.download_url}" alt="${file.name}" />
+                       <button onclick='deleteImage("${file.path}","${album}")'>×</button>`;
+      imagesDiv.appendChild(div);
+    });
+  } catch(err) {
+    imagesDiv.innerText = "Error loading images: "+err.message;
+  }
+}
+
+// -------------------------
+// Delete single image
+// -------------------------
+async function deleteImage(path, album) {
+  if (!confirm("Delete this image?")) return;
+  const status = document.getElementById(`status-${album}`);
+  status.innerText = "Deleting...";
+  try {
+    const shaResp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`, {
+      headers: { Authorization: `token ${githubToken}` }
+    });
+    const sha = (await shaResp.json()).sha;
+
+    await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`, {
+      method: "DELETE",
+      headers: { Authorization: `token ${githubToken}`, "Content-Type":"application/json" },
+      body: JSON.stringify({ message:`Delete ${path}`, branch:GITHUB_BRANCH, sha })
+    });
+
+    await new Promise(r=>setTimeout(r,300)); // wait for GitHub
+    status.innerText = "Deleted!";
+    loadAlbumImages(album);
+  } catch(err) {
+    status.innerText = "Delete failed: "+err.message;
+  }
+}
+
+// -------------------------
+// Delete whole album
+// -------------------------
+async function deleteAlbum(album) {
+  if (!confirm(`Delete all images in ${album}?`)) return;
+  const status = document.getElementById(`status-${album}`);
+  status.innerText = "Deleting album...";
+  try {
+    const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_FOLDER}/${album}?ref=${GITHUB_BRANCH}`, {
+      headers: { Authorization: `token ${githubToken}` }
+    });
+    const files = await resp.json();
+    for (let file of files) {
+      await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${file.path}`, {
+        method: "DELETE",
+        headers: { Authorization: `token ${githubToken}`, "Content-Type":"application/json" },
+        body: JSON.stringify({ message:`Delete ${file.path}`, branch:GITHUB_BRANCH, sha:file.sha })
+      });
+      await new Promise(r=>setTimeout(r,200));
+    }
+    status.innerText = "Album deleted!";
+    loadAlbumImages(album);
+  } catch(err) {
+    status.innerText = "Delete failed: "+err.message;
+  }
+}
 </script>
 
 </body>
