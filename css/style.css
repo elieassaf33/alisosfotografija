@@ -1277,7 +1277,11 @@ background-color: var(--background-color);
 }
 
 /* MOBILE MENU HIDDEN */
+<<<<<<< HEAD
 .hamburger-menu .nav-container {
+=======
+.nav-container {
+>>>>>>> 109dfbaaa42a23e7248b0c0af6e5b763b60ecbce
     display: none;
 }
 
