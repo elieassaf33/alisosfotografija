@@ -1275,3 +1275,23 @@ background-color: var(--background-color);
     align-items: center;
     align-content: center;
 }
+
+/* MOBILE MENU HIDDEN */
+.nav-container {
+    display: none;
+}
+
+/* WHEN TOGGLED OPEN */
+.nav-container.open {
+    display: block;
+}
+
+/* Optional: better mobile styling */
+@media (max-width: 768px) {
+    .nav {
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px 0;
+        text-align: center;
+    }
+}
