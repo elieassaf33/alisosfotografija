@@ -7,143 +7,221 @@
     <link rel="icon" type="image/x-icon" href="img/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        .gallery-container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
-        .section-title { text-align: center; font-size: 2.5em; margin-bottom: 10px; color: #333; }
-        .section-description { text-align: center; color: #666; margin-bottom: 40px; font-size: 1.2em; }
-        .photo-grid { display: grid; grid-auto-rows: 400px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; grid-auto-flow: dense; }
-        .photo-item { position: relative; border-radius: 10px; overflow: hidden; height: 100%; width: 100%; }
-        .image-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
-        .gallery-image { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; cursor:pointer; }
-        @media (max-width: 768px) { .photo-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 480px) { .photo-grid { grid-template-columns: 1fr; } }
-        
-    </style>
+
+<style>
+.gallery-container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+.section-title { text-align: center; font-size: 2.5em; margin-bottom: 10px; color: #333; }
+.section-description { text-align: center; color: #666; margin-bottom: 40px; font-size: 1.2em; }
+
+.photo-grid {
+    display: grid;
+    grid-auto-rows: 400px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    grid-auto-flow: dense;
+}
+
+.photo-item { position: relative; border-radius: 10px; overflow: hidden; }
+.image-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
+
+.gallery-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.6s ease, transform 0.4s ease;
+}
+
+.gallery-image.loaded { opacity: 1; }
+.gallery-image:hover { transform: scale(1.05); }
+
+/* Fullscreen viewer */
+#fullView {
+    display: none;
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.9);
+    justify-content: center; align-items: center;
+    z-index: 9999;
+}
+#fullView img { max-width: 90%; max-height: 90%; }
+
+.fullArrow {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 2em; color: #fff; cursor: pointer; user-select: none;
+}
+#prevArrow { left: 20px; }
+#nextArrow { right: 20px; }
+#closeFull {
+    position: absolute; top: 20px; right: 30px;
+    font-size: 2em; color: #fff; cursor: pointer; user-select: none;
+}
+
+@media (max-width: 768px) { .photo-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .photo-grid { grid-template-columns: 1fr; } }
+</style>
 </head>
+
 <body>
-    <header>
-        <div class="header-content">
-            <img class="logo" src="logo.png" alt="Alisos Fotografija" style="height: 100px; width: auto;">
-            <button class="menu-toggle" aria-label="Perjungti meniu">
-                <span class="bar"></span><span class="bar"></span><span class="bar"></span>
-            </button>
-            <nav class="nav-container">
-                <ul class="nav">
-                    <li><a href="index.html">Pradžia</a></li>
-                    <li class="portfolio-dropdown">
-                        <a href="portfolio.html">Portfolio</a>
-                        <div class="portfolio-dropdown-content">
-                            <a href="studio.html">Studija</a>
-                            <a href="portrait.html">Portretai</a>
-                            <a href="family.html">Šeima</a>
-                            <a href="events.html">Vestuvės</a>
-                        </div>
-                    </li>
-                    <li><a href="prices.html">Kainos</a></li>
-                    <li><a href="about.html">Apie</a></li>
-                    <li><a href="reviews.html">Atsiliepimai</a></li>
-                    <li><a href="contacts.html">Kontaktai</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
 
-    <main>
-        <div class="gallery-container">
-            <h1 class="section-title">Šeimos Fotografija</h1>
-            <p class="section-description">Amžinų šeimos prisiminimų kūrimas</p>
-            <div class="photo-grid" id="photoGrid"></div>
-        </div>
-    </main>
+<header>
+    <div class="header-content">
+        <img class="logo" src="logo.png" alt="Alisos Fotografija" style="height: 100px; width: auto;">
+        <button class="menu-toggle" aria-label="Perjungti meniu">
+            <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+        </button>
+        <nav class="nav-container">
+            <ul class="nav">
+                <li><a href="index.html">Pradžia</a></li>
+                <li class="portfolio-dropdown">
+                    <a href="portfolio.html">Portfolio</a>
+                    <div class="portfolio-dropdown-content">
+                        <a href="studio.html">Studija</a>
+                        <a href="portrait.html">Portretai</a>
+                        <a href="family.html">Šeima</a>
+                        <a href="events.html">Vestuvės</a>
+                    </div>
+                </li>
+                <li><a href="prices.html">Kainos</a></li>
+                <li><a href="about.html">Apie</a></li>
+                <li><a href="reviews.html">Atsiliepimai</a></li>
+                <li><a href="contacts.html">Kontaktai</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
 
-    <footer class="footer">
-        <p>&copy; Alisos Fotografija. Nuotraukų naudojimas galimas tik su autorės sutikumu.</p>
-    </footer>
+<main>
+    <div class="gallery-container">
+        <h1 class="section-title">Šeimos Fotografija</h1>
+        <p class="section-description">Amžinų šeimos prisiminimų kūrimas</p>
+        <div class="photo-grid" id="photoGrid"></div>
+    </div>
+</main>
 
-    <script type="module">
-        const photoGrid = document.getElementById('photoGrid');
-        const fullView = document.createElement('div');
-        fullView.id = 'fullView';
-        fullView.style.cssText = `
-            display: none;
-            position: fixed;
-            top:0; left:0;
-            width:100%; height:100%;
-            background: rgba(0,0,0,0.9);
-            justify-content:center; align-items:center;
-            z-index:9999;
-        `;
-        const fullImg = document.createElement('img');
-        fullImg.id = 'fullImg';
-        fullImg.style.maxWidth = '90%';
-        fullImg.style.maxHeight = '90%';
-        const closeBtn = document.createElement('span');
-        closeBtn.innerText = '✖';
-        closeBtn.style.cssText = 'position:absolute;top:20px;right:30px;font-size:2em;color:white;cursor:pointer;';
-        const prevArrow = document.createElement('span');
-        prevArrow.innerText = '⟨';
-        prevArrow.style.cssText = 'position:absolute;left:30px;font-size:3em;color:white;cursor:pointer;';
-        const nextArrow = document.createElement('span');
-        nextArrow.innerText = '⟩';
-        nextArrow.style.cssText = 'position:absolute;right:30px;font-size:3em;color:white;cursor:pointer;';
-        fullView.append(fullImg, closeBtn, prevArrow, nextArrow);
-        document.body.appendChild(fullView);
+<!-- Full view overlay -->
+<div id="fullView">
+    <span id="closeFull">&times;</span>
+    <span id="prevArrow" class="fullArrow">&#10094;</span>
+    <img id="fullImg" src="">
+    <span id="nextArrow" class="fullArrow">&#10095;</span>
+</div>
 
-        const GITHUB_REPO = 'elieassaf33/alisosfotografija';
-        const IMAGE_FOLDER = 'static/images/Family';
-        const BRANCH = 'main';
-        let filesArray = [];
-        let currentIndex = 0;
+<footer class="footer">
+    <p>&copy; Alisos Fotografija. Nuotraukų naudojimas galimas tik su autorės sutikimu.</p>
+</footer>
 
-        function renderPhoto(file, index) {
-            const div = document.createElement('div');
-            div.className = 'photo-item';
-            div.innerHTML = `<div class="image-container"><img src="${file.download_url}" alt="${file.name}" class="gallery-image"></div>`;
-            div.addEventListener('click', () => {
-                currentIndex = index;
-                fullImg.src = file.download_url;
-                fullView.style.display = 'flex';
-            });
-            const img = div.querySelector('img');
-            img.addEventListener('load', () => {
-                const aspectRatio = img.naturalWidth / img.naturalHeight;
-                div.classList.add(aspectRatio > 1.2 ? 'horizontal' : 'vertical');
-            });
-            return div;
+<script type="module">
+const photoGrid = document.getElementById('photoGrid');
+const fullView = document.getElementById('fullView');
+const fullImg = document.getElementById('fullImg');
+const closeFull = document.getElementById('closeFull');
+const prevArrow = document.getElementById('prevArrow');
+const nextArrow = document.getElementById('nextArrow');
+
+const GITHUB_REPO = 'elieassaf33/alisosfotografija';
+const IMAGE_FOLDER = 'static/images/Family';
+const BRANCH = 'main';
+
+let filesArray = [];
+let currentIndex = 0;
+
+/* ---- Lazy Loading Observer ---- */
+const lazyObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src;
+            img.onload = () => img.classList.add("loaded");
+            observer.unobserve(img);
         }
+    });
+});
 
-        closeBtn.addEventListener('click', () => { fullView.style.display='none'; });
-        fullView.addEventListener('click', e => { if(e.target===fullView) fullView.style.display='none'; });
-        prevArrow.addEventListener('click', () => {
-            currentIndex = (currentIndex -1 + filesArray.length)%filesArray.length;
-            fullImg.src = filesArray[currentIndex].download_url;
-        });
-        nextArrow.addEventListener('click', () => {
-            currentIndex = (currentIndex +1)%filesArray.length;
-            fullImg.src = filesArray[currentIndex].download_url;
-        });
+/* ---- Render each photo ---- */
+function renderPhoto(file, index) {
+    const div = document.createElement('div');
+    div.className = 'photo-item';
 
-        async function loadPhotos() {
-            try {
-                const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_FOLDER}?ref=${BRANCH}`);
-                if(!resp.ok) throw new Error(`Failed to fetch images: ${resp.status}`);
-                const files = await resp.json();
-                filesArray = files.filter(f=>f.type==='file');
-                photoGrid.innerHTML = '';
-                filesArray.forEach((file, idx)=>photoGrid.appendChild(renderPhoto(file, idx)));
-            } catch(err) {
-                console.error('Error loading photos:', err);
-                photoGrid.innerHTML = '<p>Could not load photos.</p>';
-            }
-        }
+    const placeholder = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 
-        loadPhotos();
-        const menuToggle = document.querySelector('.menu-toggle');
+    div.innerHTML = `
+        <div class="image-container">
+            <img 
+                src="${placeholder}"
+                data-src="${file.download_url}"
+                class="gallery-image lazy"
+                alt="${file.name}"
+            >
+        </div>`;
+
+    const img = div.querySelector("img");
+    lazyObserver.observe(img);
+
+    div.addEventListener('click', () => {
+        currentIndex = index;
+        fullImg.src = file.download_url;
+        fullView.style.display = 'flex';
+    });
+
+    return div;
+}
+
+/* ---- Fullscreen controls ---- */
+closeFull.addEventListener('click', () => {
+    fullView.style.display = 'none';
+    fullImg.src = '';
+});
+
+fullView.addEventListener('click', (e) => {
+    if (e.target === fullView) {
+        fullView.style.display = 'none';
+        fullImg.src = '';
+    }
+});
+
+prevArrow.addEventListener('click', (e) => {
+    e.stopPropagation();
+    currentIndex = (currentIndex - 1 + filesArray.length) % filesArray.length;
+    fullImg.src = filesArray[currentIndex].download_url;
+});
+
+nextArrow.addEventListener('click', (e) => {
+    e.stopPropagation();
+    currentIndex = (currentIndex + 1) % filesArray.length;
+    fullImg.src = filesArray[currentIndex].download_url;
+});
+
+/* ---- Load photos from GitHub ---- */
+async function loadPhotos() {
+    try {
+        const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_FOLDER}?ref=${BRANCH}`);
+        if (!resp.ok) throw new Error(`Failed to fetch images: ${resp.status}`);
+
+        const files = await resp.json();
+        filesArray = files.filter(f => f.type === 'file');
+
+        photoGrid.innerHTML = '';
+        filesArray.forEach((file, idx) => photoGrid.appendChild(renderPhoto(file, idx)));
+
+    } catch (err) {
+        console.error('Error loading photos:', err);
+        photoGrid.innerHTML = '<p>Could not load photos.</p>';
+    }
+}
+
+loadPhotos();
+
+/* ---- Mobile menu ---- */
+const menuToggle = document.querySelector('.menu-toggle');
 const navContainer = document.querySelector('.nav-container');
 
 menuToggle.addEventListener('click', () => {
     navContainer.classList.toggle('open');
 });
-    </script>
+</script>
+
 </body>
 </html>

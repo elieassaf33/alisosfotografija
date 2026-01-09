@@ -6,15 +6,38 @@
 <title>Studija</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+
 <style>
 .gallery-container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
 .section-title { text-align: center; font-size: 2.5em; margin-bottom: 10px; color: #333; }
 .section-description { text-align: center; color: #666; margin-bottom: 40px; font-size: 1.2em; }
-.photo-grid { display: grid; grid-auto-rows: 400px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; grid-auto-flow: dense; }
+
+.photo-grid {
+    display: grid;
+    grid-auto-rows: 400px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    grid-auto-flow: dense;
+}
+
 .photo-item { position: relative; border-radius: 10px; overflow: hidden; background: #f4f4f4; }
 .image-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
-.gallery-image { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; transition: transform 0.4s ease; cursor: pointer; }
+
+.gallery-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.6s ease, transform 0.4s ease;
+}
+
 .gallery-image:hover { transform: scale(1.05); }
+.gallery-image.loaded { opacity: 1; }
+
+/* Fullscreen viewer */
 #fullView {
     display: none;
     position: fixed; top:0; left:0; width:100%; height:100%;
@@ -23,15 +46,25 @@
     z-index: 9999;
 }
 #fullView img { max-width: 90%; max-height: 90%; }
-.fullArrow { position: absolute; top: 50%; transform: translateY(-50%); font-size: 2em; color: #fff; cursor: pointer; user-select: none; }
+
+.fullArrow {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 2em; color: #fff; cursor: pointer; user-select: none;
+}
 #prevArrow { left: 20px; }
 #nextArrow { right: 20px; }
-#closeFull { position: absolute; top: 20px; right: 30px; font-size: 2em; color: #fff; cursor: pointer; user-select: none; }
+#closeFull {
+    position: absolute; top: 20px; right: 30px;
+    font-size: 2em; color: #fff; cursor: pointer; user-select: none;
+}
+
 @media (max-width: 768px) { .photo-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .photo-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
+
 <body>
+
 <header>
     <div class="header-content">
         <img class="logo" src="logo.png" alt="Alisos Fotografija" style="height: 100px; width: auto;">
@@ -94,46 +127,96 @@ const BRANCH = 'main';
 let files = [];
 let currentIndex = 0;
 
+/* ---- Lazy Loading Observer ---- */
+const lazyObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src;
+            img.onload = () => img.classList.add("loaded");
+            observer.unobserve(img);
+        }
+    });
+});
+
+/* ---- Render each photo ---- */
 function renderPhoto(file, index) {
     const div = document.createElement('div');
     div.className = 'photo-item';
-    div.innerHTML = `<div class="image-container"><img src="${file.download_url}" alt="${file.name}" class="gallery-image"></div>`;
+
+    const placeholder = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+
+    div.innerHTML = `
+        <div class="image-container">
+            <img 
+                src="${placeholder}"
+                data-src="${file.download_url}"
+                class="gallery-image lazy"
+                alt="${file.name}"
+            >
+        </div>`;
+
+    const img = div.querySelector("img");
+    lazyObserver.observe(img);
+
     div.addEventListener('click', () => {
         currentIndex = index;
         fullImg.src = file.download_url;
         fullView.style.display = 'flex';
     });
+
     return div;
 }
 
-closeFull.addEventListener('click', () => { fullView.style.display='none'; fullImg.src=''; });
-fullView.addEventListener('click', (e) => { if(e.target===fullView){ fullView.style.display='none'; fullImg.src=''; } });
+/* ---- Fullscreen controls ---- */
+closeFull.addEventListener('click', () => {
+    fullView.style.display = 'none';
+    fullImg.src = '';
+});
 
-prevArrow.addEventListener('click', (e)=>{
+fullView.addEventListener('click', (e) => {
+    if (e.target === fullView) {
+        fullView.style.display = 'none';
+        fullImg.src = '';
+    }
+});
+
+prevArrow.addEventListener('click', (e) => {
     e.stopPropagation();
     currentIndex = (currentIndex - 1 + files.length) % files.length;
     fullImg.src = files[currentIndex].download_url;
 });
-nextArrow.addEventListener('click', (e)=>{
+
+nextArrow.addEventListener('click', (e) => {
     e.stopPropagation();
     currentIndex = (currentIndex + 1) % files.length;
     fullImg.src = files[currentIndex].download_url;
 });
 
+/* ---- Load photos from GitHub ---- */
 async function loadPhotos() {
     try {
         const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_FOLDER}?ref=${BRANCH}`);
-        if(!resp.ok) throw new Error(`Failed to fetch images: ${resp.status}`);
+        if (!resp.ok) throw new Error(`Failed to fetch images: ${resp.status}`);
+
         files = await resp.json();
         photoGrid.innerHTML = '';
-        files.forEach((file, idx)=>{ if(file.type==='file') photoGrid.appendChild(renderPhoto(file, idx)); });
-    } catch(err) {
+
+        files.forEach((file, idx) => {
+            if (file.type === 'file') {
+                photoGrid.appendChild(renderPhoto(file, idx));
+            }
+        });
+
+    } catch (err) {
         console.error('Error loading photos:', err);
         photoGrid.innerHTML = '<p>Could not load photos.</p>';
     }
 }
 
 loadPhotos();
+
+/* ---- Mobile menu ---- */
 const menuToggle = document.querySelector('.menu-toggle');
 const navContainer = document.querySelector('.nav-container');
 
@@ -141,5 +224,6 @@ menuToggle.addEventListener('click', () => {
     navContainer.classList.toggle('open');
 });
 </script>
+
 </body>
 </html>
