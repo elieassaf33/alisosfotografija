@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="css/style.css">
 <meta charset="UTF-8">
 <title>Alisos Fotografija Adminas</title>
 <style>
@@ -23,7 +24,7 @@
 <body>
 
 <h1>Alisos Fotografija Adminas</h1>
-
+<h1><a href="index.html" class= "book-btn">Atgal į puslapį</a></h1>
 <div id="albumsContainer"></div>
 
 <script>
@@ -33,12 +34,17 @@ const ALBUMS = ["Events", "Studio", "Portrait", "Family"];
 
 let ADMIN_TOKEN = null;
 
-// Prompt for password
-const userPass = prompt("Enter admin password:");
-if(userPass !== ADMIN_PASSWORD) {
-  alert("Incorrect password. Access denied.");
-  document.body.innerHTML = "<h2 style='text-align:center;color:red;margin-top:5rem;'>Access Denied</h2>";
-  throw new Error("Unauthorized");
+if (!localStorage.getItem("admin_logged_in")) {
+  const userPass = prompt("Enter admin password:");
+  if (userPass !== ADMIN_PASSWORD) {
+    alert("Incorrect password. Access denied.");
+    document.body.innerHTML =
+      "<h2 style='text-align:center;color:red;margin-top:5rem;'>Access Denied</h2>";
+    throw new Error("Unauthorized");
+  }
+  // Save login status
+  localStorage.setItem("admin_logged_in", "true");
+  alert("Logged in successfully!");
 }
 
 // Get token once
