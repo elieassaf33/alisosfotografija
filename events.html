@@ -201,17 +201,18 @@ nextArrow.addEventListener('click', (e) => {
 /* ---- Load Photos from Bunny ---- */
 async function loadPhotos() {
     try {
-        const resp = await fetch(`https://storage.bunnycdn.com/${STORAGE_ZONE}/${ALBUM}/`, {
-            method: "GET",
-            headers: { "AccessKey": STORAGE_KEY }
-        });
+        const resp = await fetch(`/.netlify/functions/list-images?album=${ALBUM}`);
 
-        if (!resp.ok) throw new Error(`Failed to fetch images: ${resp.status}`);
+        if (!resp.ok) {
+            throw new Error(`Failed to fetch images: ${resp.status}`);
+        }
 
-        images = await resp.json();
+        files = await resp.json();
 
         photoGrid.innerHTML = '';
-        images.forEach((file, idx) => photoGrid.appendChild(renderPhoto(file, idx)));
+        files.forEach((file, idx) => {
+            photoGrid.appendChild(renderPhoto(file, idx));
+        });
 
     } catch (err) {
         console.error('Error loading photos:', err);
