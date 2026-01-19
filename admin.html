@@ -2,241 +2,269 @@
 <html lang="en">
 <head>
   <link rel="stylesheet" href="css/style.css">
-<meta charset="UTF-8">
-<title>Alisos Fotografija Adminas</title>
-<style>
-  body { font-family: 'ubuntu light', sans-serif, Arial; background:#f6f4f1; margin:0; padding:2rem; color:#333; }
-  h1 { text-align:center; margin-bottom:2rem; }
-  .album { background:white; padding:1rem; margin-bottom:2rem; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-  .album h2 { margin-top:0; }
-  .controls { margin-bottom:1rem; display:flex; gap:0.5rem; flex-wrap:wrap; }
-  .controls button { padding:0.5rem 1rem; cursor:pointer; border:none; border-radius:6px; background:#555; color:white; transition:0.2s; }
-  .controls button:hover { background:#222; }
-  input[type="file"] { border-radius:6px; padding:0.3rem; }
-  .images { display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
-  .image-item { position:relative; border-radius:6px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,0.1); }
-  .image-item img { width:100%; display:block; object-fit:cover; height:100px; }
-  .image-item button { position:absolute; top:5px; right:5px; background:red; border:none; color:white; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:12px; }
-  .status { margin-top:0.5rem; color:green; }
-  .error { color:red; }
-</style>
+  <meta charset="UTF-8">
+  <title>Alisos Fotografija Adminas</title>
+  <style>
+    body { font-family: 'ubuntu light', sans-serif, Arial; background:#f6f4f1; margin:0; padding:2rem; color:#333; }
+    h1 { text-align:center; margin-bottom:2rem; }
+    .album { background:white; padding:1rem; margin-bottom:2rem; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+    .album h2 { margin-top:0; }
+    .controls { margin-bottom:1rem; display:flex; gap:0.5rem; flex-wrap:wrap; }
+    .controls button { padding:0.5rem 1rem; cursor:pointer; border:none; border-radius:6px; background:#555; color:white; transition:0.2s; }
+    .controls button:hover { background:#222; }
+    input[type="file"] { border-radius:6px; padding:0.3rem; }
+    .images { display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
+    .image-item { position:relative; border-radius:6px; overflow:hidden; box-shadow:0 1px 6px rgba(0,0,0,0.1); }
+    .image-item img { width:100%; display:block; object-fit:cover; height:100px; }
+    .image-item button { position:absolute; top:5px; right:5px; background:red; border:none; color:white; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:12px; }
+    .status { margin-top:0.5rem; color:green; }
+    .error { color:red; }
+  </style>
 </head>
 <body>
 
 <h1>Alisos Fotografija Adminas</h1>
-<h1><a href="index.html" class= "book-btn">Atgal į puslapį</a></h1>
+<h1><a href="index.html" class="book-btn">Atgal į puslapį</a></h1>
 <div id="albumsContainer"></div>
 
 <script>
-const ADMIN_PASSWORD = "ALISIJA004";
-const IMAGE_FOLDER = "static/images";
-const ALBUMS = ["Events", "Studio", "Portrait", "Family"];
+  // -------------------------
+  // CONFIG
+  // -------------------------
+  const ADMIN_PASSWORD = "ALISIJA004";
 
-let ADMIN_TOKEN = null;
+  // Bunny config – replace with your real values
+  const STORAGE_ZONE = "alisos-gallery"; // your Bunny Storage Zone name
+  const STORAGE_KEY  = "e7e231b7-4fd4-416b-aaab5ddc4c2c-1fc2-4902"; // from Bunny dashboard
+  const CDN_URL      = "https://alisos.b-cdn.net"; // your Pull Zone URL
 
-if (!localStorage.getItem("admin_logged_in")) {
-  const userPass = prompt("Enter admin password:");
-  if (userPass !== ADMIN_PASSWORD) {
-    alert("Incorrect password. Access denied.");
-    document.body.innerHTML =
-      "<h2 style='text-align:center;color:red;margin-top:5rem;'>Access Denied</h2>";
-    throw new Error("Unauthorized");
-  }
-  // Save login status
-  localStorage.setItem("admin_logged_in", "true");
-  alert("Logged in successfully!");
-}
+  const ALBUMS = ["Events", "Studio", "Portrait", "Family"];
 
-// Get token once
-async function initToken() {
-  try {
-    const resp = await fetch("/.netlify/functions/getUploadToken", { headers: { "X-Admin-Pass": ADMIN_PASSWORD } });
-    const cfg = await resp.json();
-    if (!cfg.token) throw new Error("Unauthorized");
-    ADMIN_TOKEN = cfg;  // store globally
-  } catch(err) {
-    alert("Failed to get admin token: " + err.message);
-    throw err;
-  }
-}
-
-function fileToBase64(file) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result.split(",")[1]);
-    reader.readAsDataURL(file);
-  });
-}
-
-// -------------------------
-// Render albums
-// -------------------------
-function renderAlbums() {
-  const container = document.getElementById("albumsContainer");
-  container.innerHTML = "";
-  ALBUMS.forEach(album => {
-    const div = document.createElement("div");
-    div.className = "album";
-    div.id = `album-${album}`;
-    div.innerHTML = `
-      <h2>${album}</h2>
-      <div class="controls">
-        <input type="file" multiple id="fileInput-${album}" />
-        <button onclick="uploadAlbum('${album}')">Upload</button>
-        <button onclick="deleteAlbum('${album}')">Delete Whole Album</button>
-        <span class="status" id="status-${album}"></span>
-      </div>
-      <div class="images" id="images-${album}"></div>
-    `;
-    container.appendChild(div);
-    loadAlbumImages(album);
-  });
-}
-
-// -------------------------
-// Upload album
-// -------------------------
-async function uploadAlbum(album) {
-  const input = document.getElementById(`fileInput-${album}`);
-  const files = Array.from(input.files);
-  if (!files.length) return alert("Select files first!");
-  const status = document.getElementById(`status-${album}`);
-  status.innerText = "Uploading...";
-  try {
-    const { token, repo, branch } = ADMIN_TOKEN;
-    for (let file of files) {
-      const base64 = await fileToBase64(file);
-      const path = `${IMAGE_FOLDER}/${album}/${encodeURIComponent(file.name)}`;
-      
-      // Check SHA
-      let sha;
-      const checkResp = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`, {
-        headers: { Authorization: `token ${token}`, "User-Agent": "AdminPanel" }
-      });
-      if (checkResp.status === 200) sha = (await checkResp.json()).sha;
-
-      // Upload
-      const uploadResp = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
-        method:"PUT",
-        headers:{ Authorization: `token ${token}`, "User-Agent":"AdminPanel", "Content-Type":"application/json" },
-        body: JSON.stringify({ message:`Upload ${file.name}`, content:base64, branch, sha })
-      });
-      const result = await uploadResp.json();
-      if (uploadResp.status!==201 && uploadResp.status!==200) console.error(result);
+  // -------------------------
+  // Simple admin gate
+  // -------------------------
+  if (!localStorage.getItem("admin_logged_in")) {
+    const userPass = prompt("Enter admin password:");
+    if (userPass !== ADMIN_PASSWORD) {
+      alert("Incorrect password. Access denied.");
+      document.body.innerHTML =
+        "<h2 style='text-align:center;color:red;margin-top:5rem;'>Access Denied</h2>";
+      throw new Error("Unauthorized");
     }
-    status.innerText = "Upload complete!";
-    loadAlbumImages(album);
-  } catch(err) {
-    status.innerText = "Error: " + err.message;
-    status.classList.add("error");
+    localStorage.setItem("admin_logged_in", "true");
+    alert("Logged in successfully!");
   }
-}
 
-// -------------------------
-// Load album images
-// -------------------------
-async function loadAlbumImages(album) {
-  const imagesDiv = document.getElementById(`images-${album}`);
-  imagesDiv.innerHTML = "Loading...";
-  try {
-    const { token, repo, branch } = ADMIN_TOKEN;
-    const resp = await fetch(`https://api.github.com/repos/${repo}/contents/${IMAGE_FOLDER}/${album}?ref=${branch}`, {
-      headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel" }
-    });
-    const files = await resp.json();
-    imagesDiv.innerHTML = "";
-    if (!Array.isArray(files) || !files.length) {
-      imagesDiv.innerHTML = "<em>No images uploaded yet.</em>";
-      return;
-    }
-    files.forEach(file => {
+  // -------------------------
+  // Render albums
+  // -------------------------
+  function renderAlbums() {
+    const container = document.getElementById("albumsContainer");
+    container.innerHTML = "";
+    ALBUMS.forEach(album => {
       const div = document.createElement("div");
-      div.className = "image-item";
-      div.innerHTML = `<img src="${file.download_url}" alt="${file.name}" />
-                       <button onclick='deleteImage("${file.path}","${album}")'>×</button>`;
-      imagesDiv.appendChild(div);
+      div.className = "album";
+      div.id = `album-${album}`;
+      div.innerHTML = `
+        <h2>${album}</h2>
+        <div class="controls">
+          <input type="file" multiple id="fileInput-${album}" />
+          <button onclick="uploadAlbum('${album}')">Upload</button>
+          <button onclick="deleteAlbum('${album}')">Delete Whole Album</button>
+          <span class="status" id="status-${album}"></span>
+        </div>
+        <div class="images" id="images-${album}"></div>
+      `;
+      container.appendChild(div);
+      loadAlbumImages(album);
     });
-  } catch(err) {
-    imagesDiv.innerText = "Error loading images: "+err.message;
   }
-}
 
-// -------------------------
-// Delete single image
-// -------------------------
-async function deleteImage(path, album) {
-  if (!confirm("Delete this image?")) return;
-  const status = document.getElementById(`status-${album}`);
-  status.innerText = "Deleting...";
-  try {
-    const { token, repo, branch } = ADMIN_TOKEN;
+  // -------------------------
+  // Upload album to Bunny
+  // -------------------------
+  async function uploadAlbum(album) {
+    const input = document.getElementById(`fileInput-${album}`);
+    const files = Array.from(input.files);
+    if (!files.length) return alert("Select files first!");
 
-    const shaResp = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`, {
-      headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel" }
-    });
-    const sha = (await shaResp.json()).sha;
+    const status = document.getElementById(`status-${album}`);
+    status.classList.remove("error");
+    status.innerText = "Uploading...";
 
-    await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
-      method: "DELETE",
-      headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel", "Content-Type":"application/json" },
-      body: JSON.stringify({ message:`Delete ${path}`, branch, sha })
-    });
+    try {
+      for (let file of files) {
+        const endpoint = `https://storage.bunnycdn.com/${STORAGE_ZONE}/${album}/${encodeURIComponent(file.name)}`;
 
-    await new Promise(r => setTimeout(r, 500));
-    status.innerText = "Deleted!";
-    loadAlbumImages(album);
-  } catch(err) {
-    status.innerText = "Error: " + err.message;
-    status.classList.add("error");
-  }
-}
+        const resp = await fetch(endpoint, {
+          method: "PUT",
+          headers: {
+            "AccessKey": STORAGE_KEY,
+            "Content-Type": file.type || "application/octet-stream"
+          },
+          body: file
+        });
 
-// -----------------------------
-// Delete whole album
-// -----------------------------
-async function deleteAlbum(album) {
-  if (!confirm(`Delete ALL images in ${album}?`)) return;
-  const status = document.getElementById(`status-${album}`);
-  status.innerText = "Deleting album...";
-  try {
-    const { token, repo, branch } = ADMIN_TOKEN;
-    const resp = await fetch(`https://api.github.com/repos/${repo}/contents/${IMAGE_FOLDER}/${album}?ref=${branch}`, {
-      headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel" }
-    });
-    const files = await resp.json();
-    if (!Array.isArray(files) || !files.length) {
-      status.innerText = "Album is already empty";
-      return;
+        if (!resp.ok) {
+          const text = await resp.text();
+          console.error("Upload error:", text);
+          throw new Error(`Upload failed for ${file.name}`);
+        }
+      }
+
+      status.innerText = "Upload complete!";
+      loadAlbumImages(album);
+    } catch (err) {
+      status.innerText = "Error: " + err.message;
+      status.classList.add("error");
     }
+  }
 
+  // -------------------------
+  // Load album images from Bunny
+  // -------------------------
+  async function loadAlbumImages(album) {
     const imagesDiv = document.getElementById(`images-${album}`);
-    imagesDiv.innerHTML = "";
+    imagesDiv.innerHTML = "Loading...";
 
-    for (let file of files) {
-      await fetch(`https://api.github.com/repos/${repo}/contents/${file.path}`, {
-        method: "DELETE",
-        headers: { Authorization: `token ${token}`, "User-Agent":"AdminPanel", "Content-Type":"application/json" },
-        body: JSON.stringify({ message:`Delete ${file.path}`, branch, sha:file.sha })
+    try {
+      const endpoint = `https://storage.bunnycdn.com/${STORAGE_ZONE}/${album}/`;
+
+      const resp = await fetch(endpoint, {
+        method: "GET",
+        headers: { "AccessKey": STORAGE_KEY }
       });
-      await new Promise(r => setTimeout(r, 200));
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        console.error("List error:", text);
+        throw new Error("Failed to list images");
+      }
+
+      const files = await resp.json();
+      imagesDiv.innerHTML = "";
+
+      if (!Array.isArray(files) || !files.length) {
+        imagesDiv.innerHTML = "<em>No images uploaded yet.</em>";
+        return;
+      }
+
+      files.forEach(file => {
+        // Bunny returns ObjectName like "Portrait/IMG_1234.jpg" or just "IMG_1234.jpg"
+        const objectName = file.ObjectName || file.Guid || file.FileName || "";
+        const fileName = objectName.split("/").pop();
+        const url = `${CDN_URL}/${album}/${encodeURIComponent(fileName)}`;
+
+        const div = document.createElement("div");
+        div.className = "image-item";
+        div.innerHTML = `
+          <img src="${url}" alt="${fileName}" />
+          <button onclick='deleteImage("${album}","${fileName}")'>×</button>
+        `;
+        imagesDiv.appendChild(div);
+      });
+    } catch (err) {
+      imagesDiv.innerText = "Error loading images: " + err.message;
     }
-
-    await new Promise(r => setTimeout(r, 500));
-    status.innerText = "Album deleted!";
-    loadAlbumImages(album);
-  } catch(err) {
-    status.innerText = "Error: " + err.message;
-    status.classList.add("error");
   }
-}
 
-// -------------------------
-// Initialize
-// -------------------------
-(async function() {
-  await initToken();
-  renderAlbums();
-})();
+  // -------------------------
+  // Delete single image from Bunny
+  // -------------------------
+  async function deleteImage(album, fileName) {
+    if (!confirm("Delete this image?")) return;
+    const status = document.getElementById(`status-${album}`);
+    status.classList.remove("error");
+    status.innerText = "Deleting...";
+
+    try {
+      const endpoint = `https://storage.bunnycdn.com/${STORAGE_ZONE}/${album}/${encodeURIComponent(fileName)}`;
+
+      const resp = await fetch(endpoint, {
+        method: "DELETE",
+        headers: { "AccessKey": STORAGE_KEY }
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        console.error("Delete error:", text);
+        throw new Error("Failed to delete image");
+      }
+
+      status.innerText = "Deleted!";
+      await new Promise(r => setTimeout(r, 300));
+      loadAlbumImages(album);
+    } catch (err) {
+      status.innerText = "Error: " + err.message;
+      status.classList.add("error");
+    }
+  }
+
+  // -------------------------
+  // Delete whole album (all images in folder)
+  // -------------------------
+  async function deleteAlbum(album) {
+    if (!confirm(`Delete ALL images in ${album}?`)) return;
+    const status = document.getElementById(`status-${album}`);
+    status.classList.remove("error");
+    status.innerText = "Deleting album...";
+
+    try {
+      const listEndpoint = `https://storage.bunnycdn.com/${STORAGE_ZONE}/${album}/`;
+      const listResp = await fetch(listEndpoint, {
+        method: "GET",
+        headers: { "AccessKey": STORAGE_KEY }
+      });
+
+      if (!listResp.ok) {
+        const text = await listResp.text();
+        console.error("List error:", text);
+        throw new Error("Failed to list album files");
+      }
+
+      const files = await listResp.json();
+      if (!Array.isArray(files) || !files.length) {
+        status.innerText = "Album is already empty";
+        return;
+      }
+
+      const imagesDiv = document.getElementById(`images-${album}`);
+      imagesDiv.innerHTML = "";
+
+      for (let file of files) {
+        const objectName = file.ObjectName || file.Guid || file.FileName || "";
+        const fileName = objectName.split("/").pop();
+        const delEndpoint = `https://storage.bunnycdn.com/${STORAGE_ZONE}/${album}/${encodeURIComponent(fileName)}`;
+
+        const delResp = await fetch(delEndpoint, {
+          method: "DELETE",
+          headers: { "AccessKey": STORAGE_KEY }
+        });
+
+        if (!delResp.ok) {
+          const text = await delResp.text();
+          console.error("Delete error:", text);
+          throw new Error(`Failed to delete ${fileName}`);
+        }
+
+        await new Promise(r => setTimeout(r, 150));
+      }
+
+      status.innerText = "Album deleted!";
+      await new Promise(r => setTimeout(r, 300));
+      loadAlbumImages(album);
+    } catch (err) {
+      status.innerText = "Error: " + err.message;
+      status.classList.add("error");
+    }
+  }
+
+  // -------------------------
+  // Initialize
+  // -------------------------
+  (function() {
+    renderAlbums();
+  })();
 </script>
 </body>
 </html>

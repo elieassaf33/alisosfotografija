@@ -113,6 +113,7 @@
 </footer>
 
 <script>
+/* ---- DOM Elements ---- */
 const photoGrid = document.getElementById('photoGrid');
 const fullView = document.getElementById('fullView');
 const fullImg = document.getElementById('fullImg');
@@ -120,14 +121,16 @@ const closeFull = document.getElementById('closeFull');
 const prevArrow = document.getElementById('prevArrow');
 const nextArrow = document.getElementById('nextArrow');
 
-const GITHUB_REPO = 'elieassaf33/alisosfotografija';
-const IMAGE_FOLDER = 'static/images/Studio';
-const BRANCH = 'main';
+/* ---- Bunny CDN CONFIG ---- */
+const STORAGE_ZONE = "alisos-gallery";
+const STORAGE_KEY = "e7e231b7-4fd4-416b-aaab5ddc4c2c-1fc2-4902";
+const CDN_URL = "https://alisos.b-cdn.net";
+const ALBUM = "Studio";
 
 let files = [];
 let currentIndex = 0;
 
-/* ---- Lazy Loading Observer ---- */
+/* ---- Lazy Loading ---- */
 const lazyObserver = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -139,20 +142,23 @@ const lazyObserver = new IntersectionObserver((entries, observer) => {
     });
 });
 
-/* ---- Render each photo ---- */
+/* ---- Render Photo ---- */
 function renderPhoto(file, index) {
     const div = document.createElement('div');
     div.className = 'photo-item';
 
-    const placeholder = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+    const placeholder =
+        "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+
+    const url = `${CDN_URL}/${ALBUM}/${file.ObjectName}`;
 
     div.innerHTML = `
         <div class="image-container">
             <img 
                 src="${placeholder}"
-                data-src="${file.download_url}"
+                data-src="${url}"
                 class="gallery-image lazy"
-                alt="${file.name}"
+                alt="${file.ObjectName}"
             >
         </div>`;
 
@@ -161,14 +167,14 @@ function renderPhoto(file, index) {
 
     div.addEventListener('click', () => {
         currentIndex = index;
-        fullImg.src = file.download_url;
+        fullImg.src = url;
         fullView.style.display = 'flex';
     });
 
     return div;
 }
 
-/* ---- Fullscreen controls ---- */
+/* ---- Fullscreen Controls ---- */
 closeFull.addEventListener('click', () => {
     fullView.style.display = 'none';
     fullImg.src = '';
@@ -184,33 +190,33 @@ fullView.addEventListener('click', (e) => {
 prevArrow.addEventListener('click', (e) => {
     e.stopPropagation();
     currentIndex = (currentIndex - 1 + files.length) % files.length;
-    fullImg.src = files[currentIndex].download_url;
+    fullImg.src = `${CDN_URL}/${ALBUM}/${files[currentIndex].ObjectName}`;
 });
 
 nextArrow.addEventListener('click', (e) => {
     e.stopPropagation();
     currentIndex = (currentIndex + 1) % files.length;
-    fullImg.src = files[currentIndex].download_url;
+    fullImg.src = `${CDN_URL}/${ALBUM}/${files[currentIndex].ObjectName}`;
 });
 
-/* ---- Load photos from GitHub ---- */
+/* ---- Load Photos from Bunny ---- */
 async function loadPhotos() {
     try {
-        const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${IMAGE_FOLDER}?ref=${BRANCH}`);
+        const resp = await fetch(`https://storage.bunnycdn.com/${STORAGE_ZONE}/${ALBUM}/`, {
+            method: "GET",
+            headers: { "AccessKey": STORAGE_KEY }
+        });
+
         if (!resp.ok) throw new Error(`Failed to fetch images: ${resp.status}`);
 
         files = await resp.json();
-        photoGrid.innerHTML = '';
 
-        files.forEach((file, idx) => {
-            if (file.type === 'file') {
-                photoGrid.appendChild(renderPhoto(file, idx));
-            }
-        });
+        photoGrid.innerHTML = '';
+        files.forEach((file, idx) => photoGrid.appendChild(renderPhoto(file, idx)));
 
     } catch (err) {
         console.error('Error loading photos:', err);
-        photoGrid.innerHTML = '<p>Could not load photos.</p>';
+        photoGrid.innerHTML = '<p>Nuotraukų įkelti nepavyko.</p>';
     }
 }
 
