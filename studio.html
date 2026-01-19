@@ -127,11 +127,6 @@ const STORAGE_KEY = "e7e231b7-4fd4-416b-aaab5ddc4c2c-1fc2-4902";
 const CDN_URL = "https://alisos.b-cdn.net";
 const ALBUM = "Studio";
 
-let batchSize = 20;      // how many images per load
-let currentBatch = 0;    // which batch we’re on
-let allFiles = [];       // full list returned from Netlify
-let loading = false;     // prevents double-loading
-
 let files = [];
 let currentIndex = 0;
 
@@ -155,14 +150,13 @@ function renderPhoto(file, index) {
     const placeholder =
         "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 
-    const fullUrl = `${CDN_URL}/${ALBUM}/${file.ObjectName}`;
-    const thumbUrl = `${fullUrl}?width=350&quality=55`;
+    const url = `${CDN_URL}/${ALBUM}/${file.ObjectName}`;
 
     div.innerHTML = `
         <div class="image-container">
             <img 
                 src="${placeholder}"
-                data-src="${thumbUrl}"
+                data-src="${url}"
                 class="gallery-image lazy"
                 alt="${file.ObjectName}"
             >
@@ -173,7 +167,7 @@ function renderPhoto(file, index) {
 
     div.addEventListener('click', () => {
         currentIndex = index;
-        fullImg.src = fullUrl;
+        fullImg.src = url;
         fullView.style.display = 'flex';
     });
 
@@ -208,14 +202,17 @@ nextArrow.addEventListener('click', (e) => {
 /* ---- Load Photos from Bunny ---- */
 async function loadPhotos() {
     try {
-        const resp = await fetch(`/.netlify/functions/list-images?album=${ALBUM}`);
+        const resp = await fetch(`https://storage.bunnycdn.com/${STORAGE_ZONE}/${ALBUM}/`, {
+            method: "GET",
+            headers: { "AccessKey": STORAGE_KEY }
+        });
+
         if (!resp.ok) throw new Error(`Failed to fetch images: ${resp.status}`);
 
-        allFiles = await resp.json();
-        files = allFiles;   // store full list
-        photoGrid.innerHTML = '';
+        files = await resp.json();
 
-        loadNextBatch();                // load first batch
+        photoGrid.innerHTML = '';
+        files.forEach((file, idx) => photoGrid.appendChild(renderPhoto(file, idx)));
 
     } catch (err) {
         console.error('Error loading photos:', err);
@@ -224,31 +221,6 @@ async function loadPhotos() {
 }
 
 loadPhotos();
-
-function loadNextBatch() {
-    if (loading) return;
-    loading = true;
-
-    const start = currentBatch * batchSize;
-    const end = start + batchSize;
-    const batch = allFiles.slice(start, end);
-
-    batch.forEach((file, idx) => {
-        photoGrid.appendChild(renderPhoto(file, start + idx));
-    });
-
-    currentBatch++;
-    loading = false;
-}
-
-window.addEventListener('scroll', () => {
-    const scrollPos = window.innerHeight + window.scrollY;
-    const threshold = document.body.offsetHeight - 800;
-
-    if (scrollPos >= threshold) {
-        loadNextBatch();
-    }
-});
 
 /* ---- Mobile menu ---- */
 const menuToggle = document.querySelector('.menu-toggle');
