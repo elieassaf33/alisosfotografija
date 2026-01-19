@@ -1,6 +1,4 @@
-// netlify/functions/list-images.js
-
-export async function handler(event, context) {
+export async function handler(event) {
   try {
     const album = event.queryStringParameters.album;
 
@@ -33,9 +31,14 @@ export async function handler(event, context) {
 
     const files = await resp.json();
 
+    // Return only the filenames (clean + fast)
+    const clean = files.map(f => ({
+      ObjectName: f.ObjectName.split("/").pop()
+    }));
+
     return {
       statusCode: 200,
-      body: JSON.stringify(files)
+      body: JSON.stringify(clean)
     };
 
   } catch (err) {

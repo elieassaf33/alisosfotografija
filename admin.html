@@ -4,6 +4,7 @@
   <link rel="stylesheet" href="css/style.css">
   <meta charset="UTF-8">
   <title>Alisos Fotografija Adminas</title>
+
   <style>
     body { font-family: 'ubuntu light', sans-serif, Arial; background:#f6f4f1; margin:0; padding:2rem; color:#333; }
     h1 { text-align:center; margin-bottom:2rem; }
@@ -21,10 +22,12 @@
     .error { color:red; }
   </style>
 </head>
+
 <body>
 
 <h1>Alisos Fotografija Adminas</h1>
 <h1><a href="index.html" class="book-btn">Atgal į puslapį</a></h1>
+
 <div id="albumsContainer"></div>
 
 <script>
@@ -32,12 +35,7 @@
   // CONFIG
   // -------------------------
   const ADMIN_PASSWORD = "ALISIJA004";
-
-  // Bunny config – replace with your real values
-  const STORAGE_ZONE = "alisos-gallery"; // your Bunny Storage Zone name
-  const STORAGE_KEY  = "e7e231b7-4fd4-416b-aaab5ddc4c2c-1fc2-4902"; // from Bunny dashboard
-  const CDN_URL      = "https://alisos.b-cdn.net"; // your Pull Zone URL
-
+  const CDN_URL = "https://alisos.b-cdn.net";
   const ALBUMS = ["Events", "Studio", "Portrait", "Family"];
 
   // -------------------------
@@ -61,10 +59,12 @@
   function renderAlbums() {
     const container = document.getElementById("albumsContainer");
     container.innerHTML = "";
+
     ALBUMS.forEach(album => {
       const div = document.createElement("div");
       div.className = "album";
       div.id = `album-${album}`;
+
       div.innerHTML = `
         <h2>${album}</h2>
         <div class="controls">
@@ -75,13 +75,14 @@
         </div>
         <div class="images" id="images-${album}"></div>
       `;
+
       container.appendChild(div);
       loadAlbumImages(album);
     });
   }
 
   // -------------------------
-  // Upload album to Bunny
+  // Upload images (Netlify)
   // -------------------------
   async function uploadAlbum(album) {
     const input = document.getElementById(`fileInput-${album}`);
@@ -89,31 +90,34 @@
     if (!files.length) return alert("Select files first!");
 
     const status = document.getElementById(`status-${album}`);
-    status.classList.remove("error");
     status.innerText = "Uploading...";
 
     try {
       for (let file of files) {
-        const endpoint = `https://storage.bunnycdn.com/${STORAGE_ZONE}/${album}/${encodeURIComponent(file.name)}`;
+        const reader = new FileReader();
 
-        const resp = await fetch(endpoint, {
-          method: "PUT",
-          headers: {
-            "AccessKey": STORAGE_KEY,
-            "Content-Type": file.type || "application/octet-stream"
-          },
-          body: file
+        await new Promise(resolve => {
+          reader.onload = async () => {
+            const base64 = reader.result.split(",")[1];
+
+            await fetch("/.netlify/functions/upload-image", {
+              method: "POST",
+              body: JSON.stringify({
+                album,
+                filename: file.name,
+                fileData: base64
+              })
+            });
+
+            resolve();
+          };
+          reader.readAsDataURL(file);
         });
-
-        if (!resp.ok) {
-          const text = await resp.text();
-          console.error("Upload error:", text);
-          throw new Error(`Upload failed for ${file.name}`);
-        }
       }
 
       status.innerText = "Upload complete!";
       loadAlbumImages(album);
+
     } catch (err) {
       status.innerText = "Error: " + err.message;
       status.classList.add("error");
@@ -121,79 +125,61 @@
   }
 
   // -------------------------
-  // Load album images from Bunny
+  // Load images (Netlify)
   // -------------------------
   async function loadAlbumImages(album) {
     const imagesDiv = document.getElementById(`images-${album}`);
     imagesDiv.innerHTML = "Loading...";
 
     try {
-      const endpoint = `https://storage.bunnycdn.com/${STORAGE_ZONE}/${album}/`;
-
-      const resp = await fetch(endpoint, {
-        method: "GET",
-        headers: { "AccessKey": STORAGE_KEY }
-      });
-
-      if (!resp.ok) {
-        const text = await resp.text();
-        console.error("List error:", text);
-        throw new Error("Failed to list images");
-      }
-
+      const resp = await fetch(`/.netlify/functions/list-images?album=${album}`);
       const files = await resp.json();
+
       imagesDiv.innerHTML = "";
 
-      if (!Array.isArray(files) || !files.length) {
+      if (!files.length) {
         imagesDiv.innerHTML = "<em>No images uploaded yet.</em>";
         return;
       }
 
       files.forEach(file => {
-        // Bunny returns ObjectName like "Portrait/IMG_1234.jpg" or just "IMG_1234.jpg"
-        const objectName = file.ObjectName || file.Guid || file.FileName || "";
-        const fileName = objectName.split("/").pop();
-        const url = `${CDN_URL}/${album}/${encodeURIComponent(fileName)}`;
+        const fileName = file.ObjectName;
+        const url = `${CDN_URL}/${album}/${fileName}`;
 
         const div = document.createElement("div");
         div.className = "image-item";
+
         div.innerHTML = `
-          <img src="${url}" alt="${fileName}" />
-          <button onclick='deleteImage("${album}","${fileName}")'>×</button>
+          <img src="${url}?width=200&quality=60" alt="${fileName}" />
+          <button onclick='deleteImage("${album}", "${fileName}")'>×</button>
         `;
+
         imagesDiv.appendChild(div);
       });
+
     } catch (err) {
       imagesDiv.innerText = "Error loading images: " + err.message;
     }
   }
 
   // -------------------------
-  // Delete single image from Bunny
+  // Delete single image (Netlify)
   // -------------------------
   async function deleteImage(album, fileName) {
     if (!confirm("Delete this image?")) return;
+
     const status = document.getElementById(`status-${album}`);
-    status.classList.remove("error");
     status.innerText = "Deleting...";
 
     try {
-      const endpoint = `https://storage.bunnycdn.com/${STORAGE_ZONE}/${album}/${encodeURIComponent(fileName)}`;
-
-      const resp = await fetch(endpoint, {
-        method: "DELETE",
-        headers: { "AccessKey": STORAGE_KEY }
+      await fetch("/.netlify/functions/delete-image", {
+        method: "POST",
+        body: JSON.stringify({ album, filename: fileName })
       });
 
-      if (!resp.ok) {
-        const text = await resp.text();
-        console.error("Delete error:", text);
-        throw new Error("Failed to delete image");
-      }
-
       status.innerText = "Deleted!";
-      await new Promise(r => setTimeout(r, 300));
       loadAlbumImages(album);
+
     } catch (err) {
       status.innerText = "Error: " + err.message;
       status.classList.add("error");
@@ -201,58 +187,28 @@
   }
 
   // -------------------------
-  // Delete whole album (all images in folder)
+  // Delete whole album
   // -------------------------
   async function deleteAlbum(album) {
     if (!confirm(`Delete ALL images in ${album}?`)) return;
+
     const status = document.getElementById(`status-${album}`);
-    status.classList.remove("error");
     status.innerText = "Deleting album...";
 
     try {
-      const listEndpoint = `https://storage.bunnycdn.com/${STORAGE_ZONE}/${album}/`;
-      const listResp = await fetch(listEndpoint, {
-        method: "GET",
-        headers: { "AccessKey": STORAGE_KEY }
-      });
-
-      if (!listResp.ok) {
-        const text = await listResp.text();
-        console.error("List error:", text);
-        throw new Error("Failed to list album files");
-      }
-
-      const files = await listResp.json();
-      if (!Array.isArray(files) || !files.length) {
-        status.innerText = "Album is already empty";
-        return;
-      }
-
-      const imagesDiv = document.getElementById(`images-${album}`);
-      imagesDiv.innerHTML = "";
+      const resp = await fetch(`/.netlify/functions/list-images?album=${album}`);
+      const files = await resp.json();
 
       for (let file of files) {
-        const objectName = file.ObjectName || file.Guid || file.FileName || "";
-        const fileName = objectName.split("/").pop();
-        const delEndpoint = `https://storage.bunnycdn.com/${STORAGE_ZONE}/${album}/${encodeURIComponent(fileName)}`;
-
-        const delResp = await fetch(delEndpoint, {
-          method: "DELETE",
-          headers: { "AccessKey": STORAGE_KEY }
+        await fetch("/.netlify/functions/delete-image", {
+          method: "POST",
+          body: JSON.stringify({ album, filename: file.ObjectName })
         });
-
-        if (!delResp.ok) {
-          const text = await delResp.text();
-          console.error("Delete error:", text);
-          throw new Error(`Failed to delete ${fileName}`);
-        }
-
-        await new Promise(r => setTimeout(r, 150));
       }
 
       status.innerText = "Album deleted!";
-      await new Promise(r => setTimeout(r, 300));
       loadAlbumImages(album);
+
     } catch (err) {
       status.innerText = "Error: " + err.message;
       status.classList.add("error");
@@ -260,11 +216,10 @@
   }
 
   // -------------------------
-  // Initialize
+  // Init
   // -------------------------
-  (function() {
-    renderAlbums();
-  })();
+  renderAlbums();
 </script>
+
 </body>
 </html>
