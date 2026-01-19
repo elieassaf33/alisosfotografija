@@ -150,13 +150,17 @@ function renderPhoto(file, index) {
     const placeholder =
         "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 
-    const url = `${CDN_URL}/${ALBUM}/${file.ObjectName}`;
+    // Full image (for fullscreen)
+    const fullUrl = `${CDN_URL}/${ALBUM}/${file.ObjectName}`;
+
+    // Thumbnail for the grid (fast!)
+    const thumbUrl = `${fullUrl}?width=400&quality=60`;
 
     div.innerHTML = `
         <div class="image-container">
             <img 
                 src="${placeholder}"
-                data-src="${url}"
+                data-src="${thumbUrl}"
                 class="gallery-image lazy"
                 alt="${file.ObjectName}"
             >
@@ -167,7 +171,7 @@ function renderPhoto(file, index) {
 
     div.addEventListener('click', () => {
         currentIndex = index;
-        fullImg.src = url;
+        fullImg.src = fullUrl;   // load full image in fullscreen
         fullView.style.display = 'flex';
     });
 
