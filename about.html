@@ -23,10 +23,10 @@
                     <li class="portfolio-dropdown">
                         <a href="portfolio.html">Portfolio</a>
                         <div class="portfolio-dropdown-content">
-                            <a href="studio.html">Studija</a>
-                            <a href="portrait.html">Portretai</a>
-                            <a href="family.html">Šeima</a>
-                            <a href="events.html">Vestuvės</a>
+                            <a href="profesines.html">Profesinės</a>
+                            <a href="asmenines.html">Asmeninės</a>
+                            <a href="seimos.html">Šeimos</a>
+                            <a href="renginiai.html">Renginiai</a>
                         </div>       
                     </li>
                     <li><a href="prices.html">Kainos</a></li>
@@ -46,7 +46,7 @@
                 </div>
                 <div class="about-content">
                     <div class="about-image">
-                        <img src="img/alisa.jpeg" alt="Alisa - Profesionali fotografė" class="profile-image"> <!-- Fixed path -->
+                        <img src="https://alisos.b-cdn.net/About/alisa.jpg" alt="Alisa - Profesionali fotografė" class="profile-image"> <!-- Fixed path -->
                     </div>
                     <div class="about-text">
                         <div class="bio-section">
@@ -111,16 +111,20 @@
     }
 
     .about-image {
-        flex: 1;
-        position: relative;
-        border-radius: 8px;
+        width: 300px;
+        height: 300px;
         overflow: hidden;
+        border-radius: 50%;
+        flex-shrink: 0;
+
     }
 
     .profile-image {
         width: 100%;
-        height: auto;
+        height: 100%;
+        object-fit: cover;      /* crops the image to fill the circle */
         display: block;
+
     }
 
     .image-overlay {

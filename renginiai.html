@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Šeimos</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+/* CATEGORY SELECTOR */
+.category-container {
+    max-width: 1000px;
+    margin: 60px auto;
+    padding: 20px;
+    text-align: center;
+}
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 40px;
+    margin-top: 40px;
+    justify-content: center;
+}
+.category-card {
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    cursor: pointer;
+    transition: transform .35s ease, box-shadow .35s ease;
+}
+.category-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+}
+.category-thumb {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+}
+.category-card h3 {
+    margin: 15px 0;
+    font-size: 1.3em;
+    color: #333;
+}
+
+/* GALLERY */
+.gallery-container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+.section-title { text-align: center; font-size: 2.5em; margin-bottom: 10px; color: #333; }
+.section-description { text-align: center; color: #666; margin-bottom: 40px; font-size: 1.2em; }
+
+.photo-grid {
+    display: grid;
+    grid-auto-rows: 400px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    grid-auto-flow: dense;
+}
+.photo-item { position: relative; border-radius: 10px; overflow: hidden; background: #f4f4f4; }
+.image-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
+
+.gallery-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.6s ease, transform 0.4s ease;
+}
+.gallery-image:hover { transform: scale(1.05); }
+.gallery-image.loaded { opacity: 1; }
+
+/* FULLSCREEN VIEWER */
+#fullView {
+    display: none;
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.9);
+    justify-content: center; align-items: center;
+    z-index: 9999;
+}
+#fullView img { max-width: 90%; max-height: 90%; }
+
+.fullArrow {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 2em; color: #fff; cursor: pointer; user-select: none;
+}
+#prevArrow { left: 20px; }
+#nextArrow { right: 20px; }
+#closeFull {
+    position: absolute; top: 20px; right: 30px;
+    font-size: 2em; color: #fff; cursor: pointer; user-select: none;
+}
+
+@media (max-width: 768px) { .photo-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .photo-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="header-content">
+        <img class="logo" src="logo.png" alt="Alisos Fotografija" style="height: 100px; width: auto;">
+        <button class="menu-toggle" aria-label="Perjungti meniu">
+            <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+        </button>
+        <nav class="nav-container">
+            <ul class="nav">
+                <li><a href="index.html">Pradžia</a></li>
+                <li class="portfolio-dropdown">
+                    <a href="portfolio.html">Portfolio</a>
+                    <div class="portfolio-dropdown-content">
+                        <a href="profesines.html">Profesinės</a>
+                        <a href="asmenines.html">Asmeninės</a>
+                        <a href="seimos.html">Šeimos</a>
+                        <a href="renginiai.html">Renginiai</a>
+                    </div>
+                </li>
+                <li><a href="prices.html">Kainos</a></li>
+                <li><a href="about.html">Apie</a></li>
+                <li><a href="reviews.html">Atsiliepimai</a></li>
+                <li><a href="contacts.html">Kontaktai</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main>
+
+<!-- CATEGORY SELECTOR -->
+<div id="categorySelector" class="category-container" style="display:none;">
+    <h1 class="section-title">Pasirinkite šeimos kategoriją</h1>
+
+    <div class="category-grid">
+        <div class="category-card" onclick="go('Įmonės')">
+            <img src="https://alisos.b-cdn.net/Renginiai/virselis/Įmonės.jpg" class="category-thumb">
+            <div class="category-overlay">
+                        <h2>Įmonės</h2>
+                        
+                        <span class="explore-btn">Žiūrėti Galeriją →</span>
+                    </div>
+        </div>
+
+        <div class="category-card" onclick="go('Gimtadieniai')">
+            <img src="https://alisos.b-cdn.net/Renginiai/virselis/Gimtadieniai.jpg" class="category-thumb">
+            <div class="category-overlay">
+                        <h2>Gimtadieniai</h2>
+                        
+                        <span class="explore-btn">Žiūrėti Galeriją →</span>
+                    </div>
+        </div>
+        <div class="category-card" onclick="go('Vestuvės')">
+            <img src="https://alisos.b-cdn.net/Renginiai/virselis/Vestuvės.jpg" class="category-thumb">
+            <div class="category-overlay">
+                        <h2>Vestuvės</h2>
+                        
+                        <span class="explore-btn">Žiūrėti Galeriją →</span>
+                    </div>
+        </div>
+    </div>
+</div>
+
+<!-- GALLERY -->
+<div class="gallery-container">
+    <h1 class="section-title" id="sectionTitle">Renginių Fotografija</h1>
+    <p class="section-description"></p>
+    <div class="photo-grid" id="photoGrid"></div>
+</div>
+
+</main>
+
+<!-- FULL VIEW -->
+<div id="fullView">
+    <span id="closeFull">&times;</span>
+    <span id="prevArrow" class="fullArrow">&#10094;</span>
+    <img id="fullImg" src="">
+    <span id="nextArrow" class="fullArrow">&#10095;</span>
+</div>
+
+<footer class="footer">
+    <p>&copy; Alisos Fotografija. Nuotraukų naudojimas galimas tik su autorės sutikimu.</p>
+</footer>
+
+<script>
+/* ---- Read subfolder ---- */
+const params = new URLSearchParams(window.location.search);
+const SUBFOLDER = params.get("folder");
+
+/* ---- If no folder selected → show categories ---- */
+if (!SUBFOLDER) {
+    document.getElementById("categorySelector").style.display = "block";
+    document.querySelector(".gallery-container").style.display = "none";
+}
+
+/* ---- If folder selected → update title ---- */
+if (SUBFOLDER) {
+    document.getElementById("sectionTitle").innerText = `Renginiai – ${SUBFOLDER}`;
+}
+
+/* ---- Navigation to subfolder ---- */
+function go(folder) {
+    window.location.href = `renginiai.html?folder=${folder}`;
+}
+
+/* ---- Stop gallery script if no folder ---- */
+if (!SUBFOLDER) {
+    // Do not load gallery
+    // Category selector is already visible
+    // Exit script cleanly
+    console.log("No folder selected — showing categories.");
+} else {
+
+/* ---- DOM Elements ---- */
+const photoGrid = document.getElementById('photoGrid');
+const fullView = document.getElementById('fullView');
+const fullImg = document.getElementById('fullImg');
+const closeFull = document.getElementById('closeFull');
+const prevArrow = document.getElementById('prevArrow');
+const nextArrow = document.getElementById('nextArrow');
+
+/* ---- Bunny CDN ---- */
+const CDN_URL = "https://alisos.b-cdn.net";
+const ALBUM = `Renginiai/${SUBFOLDER}`;
+
+let files = [];
+let currentIndex = 0;
+
+/* ---- Lazy Loading ---- */
+const lazyObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src;
+            img.onload = () => img.classList.add("loaded");
+            observer.unobserve(img);
+        }
+    });
+});
+
+/* ---- Render Photo ---- */
+function renderPhoto(file, index) {
+    const div = document.createElement('div');
+    div.className = 'photo-item';
+
+    const placeholder =
+        "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+
+    const url = `${CDN_URL}/${ALBUM}/${file.ObjectName}`;
+
+    div.innerHTML = `
+        <div class="image-container">
+            <img 
+                src="${placeholder}"
+                data-src="${url}"
+                class="gallery-image lazy"
+                alt="${file.ObjectName}"
+            >
+        </div>`;
+
+    const img = div.querySelector("img");
+    lazyObserver.observe(img);
+
+    div.addEventListener('click', () => {
+        currentIndex = index;
+        fullImg.src = url;
+        fullView.style.display = 'flex';
+    });
+
+    return div;
+}
+
+/* ---- Fullscreen Controls ---- */
+closeFull.addEventListener('click', () => {
+    fullView.style.display = 'none';
+    fullImg.src = '';
+});
+
+fullView.addEventListener('click', (e) => {
+    if (e.target === fullView) {
+        fullView.style.display = 'none';
+        fullImg.src = '';
+    }
+});
+
+prevArrow.addEventListener('click', (e) => {
+    e.stopPropagation();
+    currentIndex = (currentIndex - 1 + files.length) % files.length;
+    fullImg.src = `${CDN_URL}/${ALBUM}/${files[currentIndex].ObjectName}`;
+});
+
+nextArrow.addEventListener('click', (e) => {
+    e.stopPropagation();
+    currentIndex = (currentIndex + 1) % files.length;
+    fullImg.src = `${CDN_URL}/${ALBUM}/${files[currentIndex].ObjectName}`;
+});
+
+/* ---- Load Photos ---- */
+async function loadPhotos() {
+    try {
+        const resp = await fetch(`/.netlify/functions/list-images?album=${ALBUM}`);
+
+        if (!resp.ok) throw new Error(`Failed to fetch images: ${resp.status}`);
+
+        files = await resp.json();
+
+        photoGrid.innerHTML = '';
+        files.forEach((file, idx) => {
+            photoGrid.appendChild(renderPhoto(file, idx));
+        });
+
+    } catch (err) {
+        console.error('Error loading photos:', err);
+        photoGrid.innerHTML = '<p>Nuotraukų įkelti nepavyko.</p>';
+    }
+}
+
+loadPhotos();
+}
+
+/* ---- Mobile menu ---- */
+const menuToggle = document.querySelector('.menu-toggle');
+const navContainer = document.querySelector('.nav-container');
+
+menuToggle.addEventListener('click', () => {
+    navContainer.classList.toggle('open');
+});
+</script>
+
+</body>
+</html>

@@ -24,10 +24,10 @@
                     <li class="portfolio-dropdown">
                         <a href="portfolio.html">Portfolio</a>
                         <div class="portfolio-dropdown-content">
-                            <a href="studio.html">Studija</a>
-                            <a href="portrait.html">Portretai</a>
-                            <a href="family.html">Šeima</a>
-                            <a href="events.html">Vestuvės</a>
+                            <a href="profesines.html">Profesinės</a>
+                            <a href="asmenines.html">Asmeninės</a>
+                            <a href="seimos.html">Šeimos</a>
+                            <a href="renginiai.html">Renginiai</a>
                         </div>       
                     </li>
                     <li><a href="prices.html">Kainos</a></li>
@@ -57,15 +57,15 @@
         <section class="category-showcase">
             <h2 class="showcase-title">Atraskite Mano Fotografiją</h2>
             <div class="showcase-grid">
-                <a href="studio.html" class="showcase-item">
-                    <img src="IMG_0864.jpeg" alt="Studijos fotografija" class="showcase-image">
+                <a href="profesines.html" class="showcase-item">
+                    <img src="https://alisos.b-cdn.net/Portfolio/Profesine.jpg" alt="Profesinė fotografija" class="showcase-image">
                     <div class="showcase-overlay">
-                        <h3>Studija </h3 >
-                        <p>Studijoje – šviesa, šešėliai ir jaukumas. Natūralūs ir estetiški portretai, sukuriantys jūsų asmenybės istoriją.</p>
+                        <h3>Profesinės</h3 >
+                        <p>Profesinės – šviesa, šešėliai ir jaukumas. Natūralūs ir estetiški portretai, sukuriantys jūsų asmenybės istoriją.</p>
                     </div>
                 </a>
 
-                <a href="family.html" class="showcase-item">
+                <a href="seimos.html" class="showcase-item">
                     <img src="page0.jpeg" alt="Šeimos fotografija" class="showcase-image">
                     <div class="showcase-overlay">
                         <h3>Šeima</h3>
@@ -73,18 +73,18 @@
                     </div>
                 </a>
 
-                <a href="portrait.html" class="showcase-item">
-                    <img src="IMG_1949.jpeg" alt="Potretinė fotografija" class="showcase-image">
+                <a href="asmenines.html" class="showcase-item">
+                    <img src="https://alisos.b-cdn.net/Portfolio/Asmenine%CC%87s.jpg" alt="Asmeninė fotografija" class="showcase-image">
                     <div class="showcase-overlay">
-                        <h3>Portretai</h3>
+                        <h3>Asmeninės</h3>
                         <p>Natūralūs, estetiški ir jaukūs kadrai, kuriuose svarbiausia – jūs. Čia susilieja paprastumas, grožis ir autentiškumas.</p>
                     </div>
                 </a>
 
-                <a href="events.html" class="showcase-item">
-                    <img src="IMG_2524.jpeg" alt="Renginių fotografija" class="showcase-image">
+                <a href="renginiai.html" class="showcase-item">
+                    <img src="https://alisos.b-cdn.net/Portfolio/Renginiai.jpg" alt="Renginių fotografija" class="showcase-image">
                     <div class="showcase-overlay">
-                        <h3>Vestuvės</h3>
+                        <h3>Renginiai</h3>
                         <p>Vestuvės, krikštynos ar kitos šventės – kiekviena akimirka tampa ne tik prisiminimu, bet ir gražia istorija, papasakota per fotografijas.</p>
                     </div>
                 </a>
@@ -143,82 +143,106 @@
         </footer>
     <script src="js/scripts.js"></script>
     <script>
-        const images = [
-            'img/IMG_2891.jpeg' ,
-             'img/IMG_2914.jpeg',
-            'img/IMG_2831.jpeg',
-            'img/IMG_2662.jpeg' 
-        ];
-    
-        const captions = [
-            "Portretinė fotografija - Asmeniniai akimirkos fokusuose",
-            "Šeimos fotografija - Brangiausių akimirkų fiksavimas",
-            "Gamtos fotografija - Laukinės gamtos grožis",
-            "Renginių fotografija - Ypatingų progių šventimas"
-        ];
-    
-        let currentIndex = 0;
-        const dotsContainer = document.getElementById('dots-container');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const img = document.getElementById("dynamic-image");
-    
-        // Create dots
-        images.forEach((_, index) => {
-            const dot = document.createElement('div');
-            dot.classList.add('dot');
-            if (index === 0) dot.classList.add('active');
-            dot.addEventListener('click', () => goToSlide(index));
-            dotsContainer.appendChild(dot);
-        });
-    
-        function updateCaption() {
-            const caption = document.getElementById('slide-caption');
-            caption.style.opacity = 0;
-            setTimeout(() => {
-                caption.textContent = captions[currentIndex];
-                caption.style.opacity = 1;
-            }, 250);
-        }
-    
-        function updateDots() {
-            document.querySelectorAll('.dot').forEach((dot, index) => {
-                dot.classList.toggle('active', index === currentIndex);
-            });
-        }
-    
-        function goToSlide(index) {
-            if (index >= 0 && index < images.length) {
-                img.style.opacity = 0;
-                
-                setTimeout(() => {
-                    currentIndex = index;
-                    img.src = images[currentIndex];
-                    img.style.opacity = 1;
-                    updateDots();
-                    updateCaption();
-                }, 500);
-            }
-        }
-    
-        function nextSlide() {
-            goToSlide((currentIndex + 1) % images.length);
-        }
-    
-        function prevSlide() {
-            goToSlide((currentIndex - 1 + images.length) % images.length);
-        }
-    
-        prevBtn.addEventListener('click', prevSlide);
-        nextBtn.addEventListener('click', nextSlide);
-    
-        // Auto advance slides
-        const slideInterval = setInterval(nextSlide, 5000);
-    
-        // Pause slideshow when hovering over controls
-        document.querySelector('.slideshow-controls').addEventListener('mouseenter', () => {
-            clearInterval(slideInterval);
-        });
-    </script>
+const CDN_URL = "https://alisos.b-cdn.net";
+const ALBUM = "Slideshow";
+
+let images = [];
+let captions = [];
+let currentIndex = 0;
+
+const dotsContainer = document.getElementById('dots-container');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+const img = document.getElementById("dynamic-image");
+
+/* ---- Load all slideshow images dynamically ---- */
+async function loadSlideshow() {
+    try {
+        const resp = await fetch(`/.netlify/functions/list-images?album=${ALBUM}`);
+        if (!resp.ok) throw new Error("Failed to load slideshow images");
+
+        const files = await resp.json();
+
+        // Build full URLs
+        images = files.map(f => `${CDN_URL}/${ALBUM}/${f.ObjectName}`);
+
+        // Optional: auto-generate captions from filenames
+        captions = files.map(f => f.ObjectName.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "));
+
+        // Initialize slideshow
+        setupDots();
+        goToSlide(0);
+
+    } catch (err) {
+        console.error("Slideshow error:", err);
+    }
+}
+
+/* ---- Create dots dynamically ---- */
+function setupDots() {
+    dotsContainer.innerHTML = "";
+    images.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.classList.add('dot');
+        if (index === 0) dot.classList.add('active');
+        dot.addEventListener('click', () => goToSlide(index));
+        dotsContainer.appendChild(dot);
+    });
+}
+
+/* ---- Update caption ---- */
+function updateCaption() {
+    const caption = document.getElementById('slide-caption');
+    caption.style.opacity = 0;
+    setTimeout(() => {
+        caption.textContent = captions[currentIndex] || "";
+        caption.style.opacity = 1;
+    }, 250);
+}
+
+/* ---- Update dots ---- */
+function updateDots() {
+    document.querySelectorAll('.dot').forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentIndex);
+    });
+}
+
+/* ---- Change slide ---- */
+function goToSlide(index) {
+    if (index >= 0 && index < images.length) {
+        img.style.opacity = 0;
+
+        setTimeout(() => {
+            currentIndex = index;
+            img.src = images[currentIndex];
+            img.style.opacity = 1;
+            updateDots();
+            updateCaption();
+        }, 500);
+    }
+}
+
+function nextSlide() {
+    goToSlide((currentIndex + 1) % images.length);
+}
+
+function prevSlide() {
+    goToSlide((currentIndex - 1 + images.length) % images.length);
+}
+
+prevBtn.addEventListener('click', prevSlide);
+nextBtn.addEventListener('click', nextSlide);
+
+/* ---- Auto advance ---- */
+let slideInterval = setInterval(nextSlide, 5000);
+
+/* ---- Pause on hover ---- */
+document.querySelector('.slideshow-controls').addEventListener('mouseenter', () => {
+    clearInterval(slideInterval);
+});
+
+/* ---- Start slideshow ---- */
+loadSlideshow();
+</script>
 </body>
 </html>
