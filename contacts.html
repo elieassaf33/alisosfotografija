@@ -4,26 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Susisiekite</title>
+
     <link rel="icon" type="image/x-icon" href="img/favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-    <script type="text/javascript">
-        (function(){
-            emailjs.init("3XcOLWBEcnMxV5R9z"); // Replace with your EmailJS public key
-        })();
-    </script>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-61JLHTHPXC"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
 
-  gtag('config', 'G-61JLHTHPXC');
-</script>
+    <!-- NEW EmailJS v4 -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+    <script>
+        // NEW v4 initialization
+        emailjs.init({
+            publicKey: "W7oC0iDeD4krJ_knx"
+        });
+    </script>
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-61JLHTHPXC"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-61JLHTHPXC');
+    </script>
 </head>
+
 <body>
     <header>
         <div class="header-content">
@@ -33,6 +39,7 @@
                 <span class="bar"></span>
                 <span class="bar"></span>
             </button>
+
             <nav class="nav-container">
                 <ul class="nav">
                     <li><a href="index.html">Pradžia</a></li>
@@ -43,7 +50,7 @@
                             <a href="asmenines.html">Asmeninės</a>
                             <a href="family.html">Šeima</a>
                             <a href="renginiai.html">Renginiai</a>
-                        </div>       
+                        </div>
                     </li>
                     <li><a href="prices.html">Kainos</a></li>
                     <li><a href="about.html">Apie</a></li>
@@ -53,32 +60,50 @@
             </nav>
         </div>
     </header>
+
     <main>
         <div class="contact-container">
             <h1 class="page-title">Susisiekite</h1>
             <p class="subtitle">Mielai išgirsiu jūsų pageidavimus ir aptarsiu fotografijos paslaugas</p>
 
             <div class="contact-grid">
+
                 <!-- Contact Form -->
                 <div class="contact-form-container">
                     <form id="contact-form">
+
                         <div class="form-group">
                             <label for="name">Jūsų Vardas</label>
-                            <input type="text" id="name" name="name" required>
+                            <input type="text" id="name" name="from_name" required>
                         </div>
+
                         <div class="form-group">
                             <label for="email">El. Paštas</label>
-                            <input type="email" id="email" name="email" required>
+                            <input type="email" id="email" name="from_email" required>
                         </div>
                         <div class="form-group">
                             <label for="subject">Tema</label>
                             <input type="text" id="subject" name="subject" required>
                         </div>
+
+                        <div class="form-group">
+                            <label for="phone">Telefonas</label>
+                            <input type="tel" id="phone" name="phone" required>
+                        </div>
+
                         <div class="form-group">
                             <label for="message">Jūsų Žinutė</label>
                             <textarea id="message" name="message" rows="5" required></textarea>
                         </div>
-                        <input type="button" value="Siųsti Žinutę" class="submit-btn" onclick="sendEmail()" />
+
+                        <div class="form-group">
+                            <label for="appointment_time">Patogiausias laikas</label>
+                            <input type="datetime-local" id="appointment_time" name="appointment_time" required>
+                        </div>
+
+                        <input type="hidden" name="to_email" value="alisosfotografija@gmail.com">
+
+                        <input type="submit" value="Siųsti Žinutę" class="submit-btn"/>
                     </form>
                 </div>
 
@@ -122,37 +147,32 @@
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </main>
+
     <footer class="footer">
-        <p>&copy; Alisos Fotografija. Nuotraukų naudojimas galimas tik su autorės sutikumu.</p>
-        </footer>
+        <p>&copy; Alisos Fotografija. Nuotraukų naudojimas galimas tik su autorės sutikimu.</p>
+    </footer>
+
+    <!-- NEW EmailJS v4 sendForm -->
     <script type="text/javascript">
-        function sendEmail() {
-            const from_name = document.getElementById("name").value;
-            const from_email = document.getElementById("email").value;
-            const subject = document.getElementById("subject").value;
-            const message = document.getElementById("message").value;
-            const to_email = "alisosfotografija@gmail.com";
+        document.getElementById("contact-form").addEventListener("submit", function(e) {
+            e.preventDefault();
 
-            const templateParams = {
-                from_name: from_name,
-                from_email: from_email,
-                subject: subject,
-                message: message,
-                to_email: to_email
-            };
-
-            emailjs.send("service_c7srv2s", "template_trf97gt", templateParams, "3XcOLWBEcnMxV5R9z")
-                .then(function(response) {
+            emailjs.sendForm("service_e8nw01y", "template_trf97gt", "#contact-form", this)
+                .then(() => {
                     alert("Žinutė sėkmingai išsiųsta!");
-                    document.getElementById("contact-form").reset();
-                }, function(error) {
+                    this.reset();
+                })
+                .catch((error) => {
+                    console.error("EmailJS error:", error);
                     alert("Įvyko klaida siunčiant žinutę. Bandykite dar kartą.");
                 });
-        }
+        });
     </script>
+
     <script src="js/scripts.js"></script>
 </body>
 </html>
